@@ -1,0 +1,8 @@
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\FoodMapAPI.csproj.AssemblyReference.cache
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\rpswa.dswa.cache.json
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\FoodMapAPI.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\FoodMapAPI.AssemblyInfoInputs.cache
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\FoodMapAPI.AssemblyInfo.cs
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\FoodMapAPI.csproj.CoreCompileInputs.cache
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\FoodMapAPI.MvcApplicationPartsAssemblyInfo.cs
+C:\Users\Lenovo\FoodMapAPI\obj\Debug\net10.0\FoodMapAPI.MvcApplicationPartsAssemblyInfo.cache
