@@ -3,8 +3,8 @@ import Home from "./Home";
 import Login from "./Login";
 import Register from "./Register";
 
-import AdminDashboard from "./AdminDashboard";
-import SellerDashboard from "./SellerDashboard";
+import AdminDashboard from "./admin/AdminDashboard";
+import SellerDashboard from "./seller/SellerDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 function App() {
   return (

@@ -1,0 +1,22 @@
+.translation-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.translation-item {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lang-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

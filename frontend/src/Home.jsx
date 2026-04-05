@@ -1,22 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
+import "./css/Home.css";
 function Home() {
-  const [stores, setStores] = useState([]);
+  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Load danh sách cửa hàng
-    fetch("http://localhost:5050/api/stores")
-      .then(res => res.json())
-      .then(data => setStores(data))
-      .catch(err => console.error(err));
 
-    // Kiểm tra login bằng sessionStorage
-    const token = sessionStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("token");
@@ -27,198 +17,7 @@ function Home() {
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap');
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        .home-page {
-          font-family: 'Be Vietnam Pro', sans-serif;
-          background: #f8f9fa;
-        }
-
-        /* NAVBAR */
-        .navbar {
-          position: sticky;
-          top: 0;
-          z-index: 1000;
-          background: #fff;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 60px;
-          height: 70px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-
-        .navbar-brand {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: #1a1a1a;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          user-select: none;
-        }
-
-        .navbar-actions { display: flex; gap: 12px; }
-
-        .btn-outline {
-          padding: 8px 20px;
-          border: 2px solid #e8542a;
-          color: #e8542a;
-          background: transparent;
-          border-radius: 6px;
-          font-family: 'Be Vietnam Pro', sans-serif;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-outline:hover { background: #e8542a; color: #fff; }
-
-        .btn-primary {
-          padding: 8px 20px;
-          background: #e8542a;
-          color: #fff;
-          border: 2px solid #e8542a;
-          border-radius: 6px;
-          font-family: 'Be Vietnam Pro', sans-serif;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-primary:hover { background: #c94220; border-color: #c94220; }
-
-        .btn-danger {
-          padding: 8px 20px;
-          background: #dc3545;
-          color: #fff;
-          border: 2px solid #dc3545;
-          border-radius: 6px;
-          font-family: 'Be Vietnam Pro', sans-serif;
-          font-size: 0.875rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-danger:hover { background: #b02a37; border-color: #b02a37; }
-
-        /* HERO */
-        .hero {
-          position: relative;
-          height: 70vh;
-          min-height: 420px;
-          background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1600&q=80');
-          background-size: cover;
-          background-position: center;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #fff;
-        }
-
-        .hero-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.5);
-        }
-
-        .hero-text {
-          position: relative;
-          text-align: center;
-          z-index: 2;
-        }
-
-        .hero-text h1 {
-          font-size: 3.2rem;
-          font-weight: 800;
-          margin-bottom: 14px;
-          text-shadow: 0 2px 16px rgba(0,0,0,0.4);
-          line-height: 1.15;
-        }
-
-        .hero-text p {
-          font-size: 1.15rem;
-          opacity: 0.9;
-          text-shadow: 0 1px 8px rgba(0,0,0,0.4);
-        }
-
-        /* STORE LIST */
-        .stores-section {
-          padding: 80px 60px;
-          background: #f8f9fa;
-        }
-
-        .stores-section h2 {
-          text-align: center;
-          font-size: 1.8rem;
-          font-weight: 700;
-          color: #1a1a1a;
-          margin-bottom: 50px;
-        }
-
-        .stores-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 30px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .store-card {
-          background: #fff;
-          padding: 28px;
-          border-radius: 18px;
-          box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-          cursor: pointer;
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-          border-top: 4px solid #e8542a;
-        }
-
-        .store-card:hover {
-          transform: translateY(-8px);
-          box-shadow: 0 16px 40px rgba(232,84,42,0.15);
-        }
-
-        .store-card h3 {
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #e8542a;
-          margin-bottom: 10px;
-        }
-
-        .store-card p {
-          font-size: 0.9rem;
-          color: #666;
-          line-height: 1.6;
-        }
-
-        .stores-empty {
-          text-align: center;
-          color: #aaa;
-          font-size: 1rem;
-          padding: 60px 0;
-        }
-
-        /* FOOTER */
-        .footer {
-          text-align: center;
-          padding: 24px 20px;
-          background: #111;
-          color: rgba(255,255,255,0.7);
-          font-size: 0.875rem;
-        }
-
-        @media (max-width: 768px) {
-          .navbar { padding: 0 20px; }
-          .hero-text h1 { font-size: 2rem; }
-          .stores-section { padding: 60px 20px; }
-        }
-      `}</style>
-
+      
       <div className="home-page">
         {/* NAVBAR */}
         <nav className="navbar">
@@ -260,30 +59,7 @@ function Home() {
           </div>
         </div>
 
-        {/* STORE LIST */}
-        <section className="stores-section">
-          <h2>Danh sách cửa hàng</h2>
-
-          <div className="stores-grid">
-            {stores.length > 0 ? (
-              stores.map((store) => (
-                <div
-                  key={store.store_id}
-                  className="store-card"
-                  onClick={() => navigate(`/store/${store.store_id}`)}
-                >
-                  <h3>{store.name}</h3>
-                  <p>{store.description}</p>
-                </div>
-              ))
-            ) : (
-              <div className="stores-empty">
-                Chưa có cửa hàng nào.
-              </div>
-            )}
-          </div>
-        </section>
-
+       
         {/* FOOTER */}
         <footer className="footer">
           © 2026 Phố Ẩm Thực — Guide System

@@ -1,0 +1,78 @@
+/* ================= CSS: HistoryManager.css ================= */
+
+.history-container {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background: #f5f6fa;
+}
+
+.history-header {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.history-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.stat-card h3 {
+  font-size: 14px;
+  color: #888;
+}
+
+.stat-card p {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.chart-card {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+
+.history-timeline {
+  position: relative;
+  padding-left: 20px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  background: #333;
+  border-radius: 50%;
+  position: absolute;
+  left: -5px;
+  top: 5px;
+}
+
+.timeline-content {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.timeline-content div {
+  margin-bottom: 4px;
+  font-size: 14px;
+}

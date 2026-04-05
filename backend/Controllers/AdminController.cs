@@ -20,7 +20,7 @@ public class AdminController : ControllerBase
     {
         var data = new
         {
-            totalUsers = _context.Users.Count(),
+            totalUsers = _context.UsersWeb.Count(),
             
         };
 

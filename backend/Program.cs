@@ -1,22 +1,24 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-
+using Microsoft.AspNetCore.Mvc;
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+// 1. Cấu hình dịch vụ (Add services)
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
-
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.SuppressModelStateInvalidFilter = true;
+});
+// 🟢 SỬA Ở ĐÂY 1: Đổi thành AddDbContextPool để Npgsql quản lý luồng kết nối tốt hơn, tránh lỗi Disposed
+// Đổi từ AddDbContextPool thành AddDbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
-    )
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
+           .EnableSensitiveDataLogging()
+           .EnableDetailedErrors()
 );
-
-// CORS
+// 2. Cấu hình CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
@@ -28,7 +30,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-// JWT
+// 3. Cấu hình JWT
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {
@@ -46,26 +48,32 @@ builder.Services.AddAuthentication("Bearer")
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+// 4. Khởi tạo dữ liệu Seed Data (Admin mặc định)
+// 🟢 SỬA Ở ĐÂY 2: Chuyển sang dùng Async/Await để tránh block luồng Database lúc khởi động
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-    // Nếu chưa có admin thì tạo
-    if (!context.Users.Any(u => u.UserRole == "Admin"))
+    // Dùng AnyAsync thay vì Any
+    if (!await context.UsersWeb.AnyAsync(u => u.UserRole == "Admin"))
     {
-        var admin = new User
-{
-    UserName = "admin",
-    HashPass = BCrypt.Net.BCrypt.HashPassword("123456"),
-    UserRole = "Admin",
-    Email = "admin@gmail.com",
-    Phone = 0123456789
-};
+        var admin = new UserWeb
+        {
+            UserName = "admin",
+            HashPass = BCrypt.Net.BCrypt.HashPassword("123456"),
+            UserRole = "Admin",
+            Email = "admin@gmail.com",
+            Phone = "0123456789",
+            Status = "Active"
+        };
 
-        context.Users.Add(admin);
-        context.SaveChanges();
+        context.UsersWeb.Add(admin);
+        await context.SaveChangesAsync(); // Dùng SaveChangesAsync thay vì SaveChanges
     }
 }
+
+// 5. Cấu hình Middleware Pipeline
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -79,5 +87,5 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.UseStaticFiles();
 app.Run();

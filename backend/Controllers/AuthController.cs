@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -9,70 +10,128 @@ using System.Text;
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(AppDbContext context)
+    public AuthController(AppDbContext context, IConfiguration configuration)
     {
         _context = context;
+        _configuration = configuration;
     }
 
+    // ================= REGISTER =================
     [HttpPost("register")]
-    public IActionResult Register(RegisterRequest request)
+    public async Task<IActionResult> Register(RegisterRequest request)
     {
-        if (_context.Users.Any(u => u.UserName == request.UserName))
-            return BadRequest("Username đã tồn tại");
+        if (request == null)
+            return BadRequest(new { message = "Dữ liệu không hợp lệ" });
 
-        if (_context.Users.Any(u => u.Email == request.Email))
-            return BadRequest("Email đã tồn tại");
-
-        var user = new User
+        if (!ModelState.IsValid)
         {
-            UserName = request.UserName,
-            HashPass = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            UserRole = "Seller",   // 👈 mặc định Seller như bạn yêu cầu trước đó
-            Email = request.Email,
-            Phone = request.Phone
-        };
+            return BadRequest(new
+            {
+                errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+            });
+        }
 
-        _context.Users.Add(user);
-        _context.SaveChanges();
+        try
+        {
+            if (await _context.UsersWeb.AnyAsync(u => u.UserName == request.UserName))
+                return BadRequest(new { message = "Username đã tồn tại" });
 
-        return Ok("Đăng ký thành công");
+            if (await _context.UsersWeb.AnyAsync(u => u.Email == request.Email))
+                return BadRequest(new { message = "Email đã tồn tại" });
+
+            var user = new UserWeb
+            {
+                UserName = request.UserName,
+                HashPass = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                UserRole = "Seller",
+                Email = request.Email,
+                Phone = request.Phone,
+                Status = "Active"
+            };
+
+            _context.UsersWeb.Add(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Đăng ký thành công" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                message = "Lỗi server",
+                error = ex.Message
+            });
+        }
     }
 
+    // ================= LOGIN =================
     [HttpPost("login")]
-    public IActionResult Login(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request)
     {
-        var user = _context.Users
-            .FirstOrDefault(u => u.UserName == request.UserName);
+        if (request == null)
+            return BadRequest(new { message = "Dữ liệu không hợp lệ" });
 
-        if (user == null)
-            return Unauthorized("Sai tài khoản hoặc mật khẩu");
+    if (!ModelState.IsValid)
+{
+   var error = ModelState.Values
+    .SelectMany(v => v.Errors)
+    .FirstOrDefault()?.ErrorMessage;
 
-        bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.HashPass);
+return BadRequest(new { message = error });
+}
 
-        if (!isValid)
-            return Unauthorized("Sai tài khoản hoặc mật khẩu");
-
-        var claims = new[]
+        try
         {
-            new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(ClaimTypes.Role, user.UserRole)
-        };
+            var user = await _context.UsersWeb
+                .FirstOrDefaultAsync(u => u.UserName == request.UserName);
 
-        var key = new SymmetricSecurityKey(
-    Encoding.UTF8.GetBytes("THIS_IS_MY_SUPER_SECRET_KEY_123456789"));
+            if (user == null)
+                return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu" });
 
-        var token = new JwtSecurityToken(
-            claims: claims,
-            expires: DateTime.Now.AddHours(2),
-            signingCredentials:
-                new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
-        );
+            if (user.Status == "Locked")
+                return Unauthorized(new { message = "Tài khoản đã bị khóa" });
+          
 
-        return Ok(new
+            bool isValid = BCrypt.Net.BCrypt.Verify(request.Password, user.HashPass);
+
+            if (!isValid)
+                return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu" });
+
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.UserName) ,
+                new Claim(ClaimTypes.Role, user.UserRole)
+            };
+
+            var key = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+
+            var token = new JwtSecurityToken(
+                claims: claims,
+                expires: DateTime.Now.AddHours(2),
+                signingCredentials:
+                    new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            );
+
+            return Ok(new
+            {
+                token = new JwtSecurityTokenHandler().WriteToken(token),
+                role = user.UserRole,
+                username = user.UserName
+            });
+        }
+        catch (Exception ex)
         {
-            token = new JwtSecurityTokenHandler().WriteToken(token),
-            role = user.UserRole
-        });
+            return StatusCode(500, new
+            {
+                message = "Lỗi server",
+                error = ex.Message
+            });
+        }
     }
 }
