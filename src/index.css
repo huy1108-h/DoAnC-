@@ -1,13 +1,15 @@
-body {
+/* Triệt tiêu mọi khoảng trắng thừa của trình duyệt */
+html, body, #root {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* Ép Leaflet phải chiếm toàn bộ không gian được giao */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1;
 }
