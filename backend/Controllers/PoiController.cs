@@ -59,7 +59,6 @@ public class NarrationPointController : ControllerBase
         return Ok(item);
     }
 
-    // ✅ CHỈ GIỮ METHOD NÀY, XÓA CÁI CŨ
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreatePoiDto dto)
     {
@@ -72,12 +71,12 @@ public class NarrationPointController : ControllerBase
         if (dto.Image != null)
         {
             var fileName = Guid.NewGuid() + Path.GetExtension(dto.Image.FileName);
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
             var filePath = Path.Combine(folder, fileName);
             using var stream = new FileStream(filePath, FileMode.Create);
             await dto.Image.CopyToAsync(stream);
-            imagePath = "/uploads/" + fileName;
+            imagePath = "/images/" + fileName;
         }
 
         var point = new NarrationPoint
@@ -89,13 +88,23 @@ public class NarrationPointController : ControllerBase
             Priority = dto.Priority,
             IsActive = dto.IsActive,
             ImageWeb = imagePath,
-            IsCommercial = true, 
+            IsCommercial = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
         _context.NarrationPoints.Add(point);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(); // ← Save để có point.Id
+
+        // ✅ THÊM MỚI: Lưu ảnh vào bảng images cho mobile app
+        if (!string.IsNullOrEmpty(imagePath))
+        {
+            _context.Images.Add(new Image
+            {
+                NarrationPointId = point.Id,
+                ImageUrl = imagePath
+            });
+        }
 
         _context.Stalls.Add(new Stall
         {
@@ -117,7 +126,7 @@ public class NarrationPointController : ControllerBase
             Description = dto.Description
         });
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(); // ← Save Stall + FoodPlace + Image cùng lúc
         return CreatedAtAction(nameof(Get), new { id = point.Id }, point);
     }
 
@@ -135,6 +144,35 @@ public class NarrationPointController : ControllerBase
         item.Longitude = updated.Longitude;
         item.Priority = updated.Priority;
         item.UpdatedAt = DateTime.UtcNow;
+
+        // ✅ THÊM MỚI: Xử lý ảnh mới nếu admin upload khi cập nhật
+        var imageFile = Request.Form.Files["image"];
+        if (imageFile != null && imageFile.Length > 0)
+        {
+            var fileName = Guid.NewGuid() + Path.GetExtension(imageFile.FileName);
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+            using var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create);
+            await imageFile.CopyToAsync(stream);
+
+            var imagePath = "/images/" + fileName;
+
+            // Cập nhật ảnh trên NarrationPoint (web)
+            item.ImageWeb = imagePath;
+
+            // ✅ Lưu vào bảng images cho mobile app
+            _context.Images.Add(new Image
+            {
+                NarrationPointId = id,
+                ImageUrl = imagePath
+            });
+
+            // Cập nhật ảnh trên Stall luôn
+            var stallForImage = await _context.Stalls
+                .FirstOrDefaultAsync(s => s.NarrationPointsId == id);
+            if (stallForImage != null)
+                stallForImage.ImageUrl = imagePath;
+        }
 
         var foodPlace = await _context.FoodPlaces
             .FirstOrDefaultAsync(fp => fp.NarrationPointId == id);
@@ -178,8 +216,23 @@ public class NarrationPointController : ControllerBase
         var item = await _context.NarrationPoints.FindAsync(id);
         if (item == null) return NotFound();
 
+        var relatedHistories = _context.Histories.Where(h => h.NarrationPointId == id);
+        _context.Histories.RemoveRange(relatedHistories);
+
+        var relatedTourPois = _context.TourPois.Where(t => t.poi_id == id);
+        _context.TourPois.RemoveRange(relatedTourPois);
+
         var relatedStalls = _context.Stalls.Where(s => s.NarrationPointsId == id);
         _context.Stalls.RemoveRange(relatedStalls);
+
+        var relatedFoods = _context.FoodPlaces.Where(f => f.NarrationPointId == id);
+        _context.FoodPlaces.RemoveRange(relatedFoods);
+
+        var relatedTranslations = _context.NarrationTranslations.Where(t => t.NarrationPointId == id);
+        _context.NarrationTranslations.RemoveRange(relatedTranslations);
+
+        var relatedImages = _context.Images.Where(i => i.NarrationPointId == id);
+        _context.Images.RemoveRange(relatedImages);
 
         _context.NarrationPoints.Remove(item);
         await _context.SaveChangesAsync();

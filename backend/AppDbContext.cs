@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories { get; set; }
     public DbSet<UpdateRequest> UpdateRequests { get; set; }
     public DbSet<FoodPlace> FoodPlaces { get; set; }
+    public DbSet<Image> Images { get; set; }    
 
     // ✅ FIX: Dùng static method thay vì switch expression (không dùng được trong expression tree)
     private static string StallStatusToString(StallStatus status)
@@ -91,5 +92,13 @@ public class AppDbContext : DbContext
         });
 
         modelBuilder.Entity<UpdateRequest>().ToTable("update_requests");
+        modelBuilder.Entity<Image>(entity =>
+{
+    entity.ToTable("images");
+    entity.HasKey(e => e.Id);
+    entity.Property(e => e.Id).HasColumnName("id");
+    entity.Property(e => e.NarrationPointId).HasColumnName("narration_point_id");
+    entity.Property(e => e.ImageUrl).HasColumnName("image_url");
+});
     }
 }

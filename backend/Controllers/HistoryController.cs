@@ -24,8 +24,8 @@ public class HistoryController : ControllerBase
         return Ok(histories);
     }
 
-    [HttpGet("user/{userId}")]
-    public async Task<IActionResult> GetByUser(string userId)
+    [HttpGet("user/{userId:int}")]
+    public async Task<IActionResult> GetByUser(int userId)
     {
         var histories = await _context.Histories
             .Where(h => h.users_id == userId)
@@ -75,6 +75,28 @@ public class HistoryController : ControllerBase
             topPois
         });
     }
+    [HttpGet("heatmap")]
+public async Task<IActionResult> GetHeatmapData()
+{
+    var data = await _context.Histories
+        .GroupBy(h => h.NarrationPointId)
+        .Select(g => new {
+            narrationPointId = g.Key,
+            count = g.Count()
+        })
+        .Join(_context.NarrationPoints,
+            h => h.narrationPointId,
+            n => n.Id,
+            (h, n) => new {
+                lat = n.Latitude,
+                lng = n.Longitude,
+                weight = h.count,
+                name = n.Name
+            })
+        .ToListAsync();
+
+    return Ok(data);
+}
 }
 
 

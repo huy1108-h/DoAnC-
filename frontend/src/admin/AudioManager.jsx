@@ -1,452 +1,406 @@
 import { useEffect, useState } from "react";
 import styles from "../css/AudioManager.module.css";
 
-// Icons
-const ViewIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
+const API = "http://localhost:5050";
 
-const PlayIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-    <polygon points="5 3 19 12 5 21 5 3" />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-function AudioManager() {
-  const [audios, setAudios] = useState([]);
-  const [selectedAudio, setSelectedAudio] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [editingAudio, setEditingAudio] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  // --- STATE PHÂN TRANG ---
-  const [currentPage, setCurrentPage] = useState(() => {
-    const savedPage = sessionStorage.getItem("audio_manager_page");
-    return savedPage ? parseInt(savedPage) : 1;
-  });
-  const itemsPerPage = 5; 
-
-  const [form, setForm] = useState({
-    audio_id: "",
-    audio_title: "",
-    audio_url: "",
-    audio_text: "",
-    poi_id: ""
-  });
-  
-  const token = sessionStorage.getItem("token");
-
-  const loadAudios = () => {
-    fetch("http://localhost:5050/api/Audio", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    })
-      .then(res => res.json())
-      .then(data => setAudios(data))
-      .catch(() => console.log("Lỗi tải audio"));
+// ── TTS ──
+const speakText = (text) => {
+  if (!text) return alert("Không có nội dung để đọc!");
+  const doSpeak = () => {
+    const voices = window.speechSynthesis.getVoices();
+    const utterance = new SpeechSynthesisUtterance(text);
+    let lang = "en-US";
+    if (/[àáảãạăắằẳẵặâấầẩẫậđêếềểễệôốồổỗộơớờởỡợưứừửữự]/i.test(text)) lang = "vi-VN";
+    else if (/[\u4e00-\u9fff]/.test(text)) lang = "zh-CN";
+    const voice = voices.find(v => v.lang === lang) || voices.find(v => v.lang.startsWith(lang.split("-")[0]));
+    if (voice) { utterance.voice = voice; utterance.lang = voice.lang; }
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   };
+  speechSynthesis.getVoices().length === 0
+    ? (speechSynthesis.onvoiceschanged = doSpeak)
+    : doSpeak();
+};
+
+// ── Pagination ──
+function Pagination({ current, total, onChange }) {
+  if (total <= 1) return null;
+  return (
+    <div className={styles.pagination}>
+      <button onClick={() => onChange(1)} disabled={current === 1}>&laquo;</button>
+      <button onClick={() => onChange(current - 1)} disabled={current === 1}>&lsaquo;</button>
+      {[...Array(total)].map((_, i) => (
+        <button key={i} onClick={() => onChange(i + 1)} className={current === i + 1 ? styles.active : ""}>{i + 1}</button>
+      ))}
+      <button onClick={() => onChange(current + 1)} disabled={current === total}>&rsaquo;</button>
+      <button onClick={() => onChange(total)} disabled={current === total}>&raquo;</button>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+// TAB 1: TIẾNG VIỆT → food_places.description
+// ══════════════════════════════════════
+function VietnameseTab({ token }) {
+  const [foods, setFoods] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 5;
 
   useEffect(() => {
-    sessionStorage.setItem("audio_manager_page", currentPage);
-  }, [currentPage]);
-
-  useEffect(() => {
-    loadAudios();
+    fetch(`${API}/api/FoodPlace`, { headers: { Authorization: "Bearer " + token } })
+      .then(r => r.json())
+      .then(setFoods)
+      .catch(() => console.log("Lỗi tải FoodPlace"));
   }, []);
 
-  // --- LOGIC PHÂN TRANG ---
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = audios.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(audios.length / itemsPerPage);
+  const openEdit = (food) => { setEditing(food); setText(food.description || ""); };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm({
-      ...form,
-      [name]: type === "checkbox" ? checked : value
-    });
-  };
-
-  const openAddForm = () => {
-    setEditingAudio(null);
-    setForm({
-      audio_id: "",
-      audio_title: "",
-      audio_url: "",
-      audio_text: "",
-      poi_id: ""
-    });
-    setShowForm(true);
-  };
-
-  const openEditForm = (audio) => {
-    setEditingAudio(audio);
-    setForm({
-      ...audio,
-      audio_text: audio.audio_text || ""
-    });
-    setShowForm(true);
-  };
-
-  // LƯU Ý: ADMIN SUBMIT THẲNG VÀO BẢNG AUDIO
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const url = editingAudio 
-      ? `http://localhost:5050/api/Audio/${editingAudio.audio_id || editingAudio.id}` 
-      : "http://localhost:5050/api/Audio";
-    
-    const method = editingAudio ? "PUT" : "POST";
-
-    const payload = {
-      audio_id: parseInt(form.audio_id) || 0,
-      audio_title: form.audio_title,
-      audio_url: form.audio_url,
-      audio_text: form.audio_text,
-      poi_id: parseInt(form.poi_id) || 0
-    };
-
+  const handleSave = async () => {
+    if (!editing) return;
+    setSaving(true);
     try {
-      const res = await fetch(url, {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "Bearer " + token
-        },
-        body: JSON.stringify(payload) 
+      const res = await fetch(`${API}/api/FoodPlace/${editing.id}/description`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({
+          description: text
+        })
       });
-
       if (res.ok) {
-        setShowForm(false);
-        setEditingAudio(null);
-        loadAudios(); 
-        alert(editingAudio ? "✅ Cập nhật Audio thành công!" : "✅ Thêm Audio thành công!");
-      } else {
-        const errorData = await res.json();
-        console.log("Chi tiết lỗi từ C#:", errorData);
-        alert("❌ Thao tác thất bại! Kiểm tra lại thông tin.");
-      }
-    } catch (err) {
-      console.error("Lỗi mạng:", err);
-    }
+        setFoods(prev => prev.map(f => f.id === editing.id ? { ...f, description: text } : f));
+        setEditing(null);
+        alert("✅ Lưu thành công!");
+      } else alert("❌ Lỗi lưu!");
+    } catch { alert("❌ Lỗi kết nối!"); }
+    finally { setSaving(false); }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Bạn chắc chắn muốn xóa audio này?")) return;
-    const res = await fetch(`http://localhost:5050/api/Audio/${id}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    });
-    if (res.ok) {
-      setSelectedAudio(null);
-      loadAudios();
-    }
-  };
+  const totalPages = Math.ceil(foods.length / PER_PAGE);
+  const items = foods.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
-  const handlePreviewSpeak = () => {
-    if (!form.audio_text) {
-      alert("Vui lòng nhập nội dung!");
-      return;
-    }
-
-    const text = form.audio_text;
-
-    const speak = () => {
-      const voices = window.speechSynthesis.getVoices();
-      const utterance = new SpeechSynthesisUtterance(text);
-
-      let lang = "en-US";
-      if (/[àáảãạăắằẳẵặâấầẩẫậđêếềểễệôốồổỗộơớờởỡợưứừửữự]/i.test(text)) {
-        lang = "vi-VN";
-      } else if (/[\u4e00-\u9fff]/.test(text)) {
-        lang = "zh-CN";
-      }
-
-      let selectedVoice =
-        voices.find(v => v.lang === lang) ||
-        voices.find(v => v.lang.startsWith(lang.split("-")[0]));
-
-      if (!selectedVoice) {
-        console.log("Không tìm thấy voice phù hợp, dùng default");
-      } else {
-        utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
-      }
-
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    };
-
-    if (speechSynthesis.getVoices().length === 0) {
-      speechSynthesis.onvoiceschanged = speak;
-    } else {
-      speak();
-    }
-  };
-const handleGenerateAudio = async () => {
-  if (!form.audio_text) {
-    alert("Vui lòng nhập nội dung!");
-    return;
-  }
-
-  setIsGenerating(true);
-
-  try {
-    const res = await fetch("http://localhost:5050/api/audios/tts-generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      },
-      body: JSON.stringify({
-        text: form.audio_text
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.text();
-      throw new Error(err);
-    }
-
-    const data = await res.json();
-
-    // 🔥 GÁN URL vào form
-    setForm(prev => ({
-      ...prev,
-      audio_url: data.audioUrl
-    }));
-
-    alert("✅ Tạo audio thành công!");
-
-  } catch (err) {
-    console.error(err);
-    alert("❌ Lỗi tạo audio!");
-  } finally {
-    setIsGenerating(false);
-  }
-};
   return (
-    <div className={styles["audio-container"]}>
-      <div className={styles["audio-header"]}>
-        <h1>🎧 Quản lý Audio Guide</h1>
-        <button className={styles["add-btn"]} onClick={openAddForm}>
-          + Thêm Audio
-        </button>
+    <div>
+      <table className={styles["audio-table"]}>
+        <thead>
+          <tr>
+            <th>POI ID</th>
+            <th>Tên địa điểm</th>
+            <th>Nội dung TTS (Tiếng Việt)</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {items.map(food => (
+            <tr key={food.id}>
+              <td><code>{food.narrationPointId}</code></td>
+              <td>{food.narrationPoint?.name || `POI #${food.narrationPointId}`}</td>
+              <td title={food.description}>
+                {food.description
+                  ? (food.description.length > 50 ? food.description.substring(0, 50) + "..." : food.description)
+                  : <span style={{ color: "#999", fontStyle: "italic" }}>Chưa có nội dung</span>}
+              </td>
+              <td>
+                <div className={styles["action-buttons"]}>
+                  <button
+                    className={`${styles["action-btn"]} ${styles["play-btn"]}`}
+                    title="Nghe thử TTS"
+                    onClick={() => speakText(food.description)}
+                  >🔊</button>
+                  <button
+                    className={`${styles["action-btn"]} ${styles["edit-btn"]}`}
+                    title="Chỉnh sửa"
+                    onClick={() => openEdit(food)}
+                  ><i className="fa-solid fa-pen" /></button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <Pagination current={page} total={totalPages} onChange={setPage} />
+
+      {/* Modal sửa */}
+      {editing && (
+        <div className={styles.modal}>
+          <div className={styles["modal-box"]}>
+            <div className={styles["modal-header"]}>
+              <h2>✏️ Sửa nội dung TTS — {editing.narrationPoint?.name || `POI #${editing.narrationPointId}`}</h2>
+              <button className={styles["modal-close-icon"]} onClick={() => setEditing(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div className={styles["modal-content"]}>
+              <div className={styles["form-group"]}>
+                <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>Nội dung Tiếng Việt (description)</span>
+                  <button
+                    type="button"
+                    onClick={() => speakText(text)}
+                    style={{ background: "#4caf50", color: "white", border: "none", padding: "4px 10px", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }}
+                  >🔊 Nghe thử</button>
+                </label>
+                <textarea
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  rows="6"
+                  placeholder="Nhập nội dung thuyết minh tiếng Việt..."
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ddd", resize: "vertical" }}
+                />
+              </div>
+              <div className={styles["modal-actions"]}>
+                <button
+                  type="button"
+                  className={`${styles["icon-btn"]} ${styles["save-btn"]}`}
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Đang lưu..." : <i className="fa-solid fa-floppy-disk" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+// TAB 2: BẢN DỊCH → narration_translations.content (en / zh)
+// ══════════════════════════════════════
+const LANGS = [
+  { code: "en", label: "🇬🇧 English" },
+  { code: "zh", label: "🇨🇳 中文" },
+];
+
+function TranslationTab({ token }) {
+  const [activeLang, setActiveLang] = useState("en");
+  const [translations, setTranslations] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const [text, setText] = useState("");
+  const [translatedName, setTranslatedName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 5;
+
+  const loadTranslations = () => {
+    fetch(`${API}/api/Translation/by-language/${activeLang}`, {
+      headers: { Authorization: "Bearer " + token }
+    })
+      .then(r => r.json())
+      .then(setTranslations)
+      .catch(() => console.log("Lỗi tải translation"));
+  };
+
+  useEffect(() => {
+    setPage(1);
+    loadTranslations();
+  }, [activeLang]);
+
+  const openEdit = (t) => {
+    setEditing(t);
+    setText(t.content || "");
+    setTranslatedName(t.translatedName || "");
+  };
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`${API}/api/Translation/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({
+          id: editing.id,
+          narrationPointId: editing.narrationPointId,
+          languageCode: editing.languageCode,
+          translatedName,
+          content: text
+        })
+      });
+      if (res.ok) {
+        setTranslations(prev => prev.map(t =>
+          t.id === editing.id ? { ...t, content: text, translatedName } : t
+        ));
+        setEditing(null);
+        alert("✅ Lưu thành công!");
+      } else alert("❌ Lỗi lưu!");
+    } catch { alert("❌ Lỗi kết nối!"); }
+    finally { setSaving(false); }
+  };
+
+  const totalPages = Math.ceil(translations.length / PER_PAGE);
+  const items = translations.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  return (
+    <div>
+      {/* Language switcher */}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px" }}>
+        {LANGS.map(lang => (
+          <button
+            key={lang.code}
+            onClick={() => setActiveLang(lang.code)}
+            style={{
+              padding: "6px 16px",
+              borderRadius: "20px",
+              border: "2px solid",
+              borderColor: activeLang === lang.code ? "#6a5af9" : "#e2e8f0",
+              background: activeLang === lang.code ? "#6a5af9" : "white",
+              color: activeLang === lang.code ? "white" : "#475569",
+              fontWeight: "600",
+              cursor: "pointer",
+              fontSize: "13px"
+            }}
+          >{lang.label}</button>
+        ))}
       </div>
 
       <table className={styles["audio-table"]}>
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Tiêu đề</th>
-            <th>Nội dung thuyết minh</th>
-            <th>URL</th>
-            <th>POI</th>
+            <th>POI ID</th>
+            <th>Tên dịch</th>
+            <th>Nội dung TTS</th>
             <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
-          {currentItems.map((item, index) => {
-            const audioId = item.audio_id || item.id || item.Id;
-            const audioTitle = item.audio_title || item.title || item.Title;
-            const audioUrl = item.audio_url || item.audioUrl || item.AudioUrl;
-            const audioText = item.audio_text || "";
-            const poiId = item.poi_id || item.narrationPointId || item.NarrationPointId;
-
-            return (
-              <tr key={audioId ? `audio-${audioId}` : `index-${index}`}>
-                <td><code>{audioId}</code></td>
-                <td>{audioTitle}</td>
-                <td title={audioText}>
-                  {audioText ? (
-                    audioText.length > 35 ? audioText.substring(0, 35) + "..." : audioText
-                  ) : (
-                    <span style={{ color: "#999", fontStyle: "italic" }}>Trống</span>
-                  )}
-                </td>
-                <td>
-                  <a href={audioUrl} target="_blank" rel="noreferrer">
-                    {audioUrl?.length > 30 ? audioUrl.substring(0, 30) + "..." : audioUrl}
-                  </a>
-                </td>
-                <td>
-                  <span className={styles["poi-badge"]}>{poiId}</span>
-                </td>
-                <td>
-                  <div className={styles["action-buttons"]}>
-                    <button className={`${styles["action-btn"]} ${styles["play-btn"]}`} onClick={() => window.open(audioUrl)} title="Phát URL">
-                      <PlayIcon />
-                    </button>
-                    <button className={`${styles["action-btn"]} ${styles["view-btn"]}`} onClick={() => setSelectedAudio(item)} title="Xem chi tiết">
-                      <ViewIcon />
-                    </button>
-                    <button className={`${styles["action-btn"]} ${styles["edit-btn"]}`} onClick={() => openEditForm(item)} title="Sửa">
-                      <i className="fa-solid fa-pen"></i>
-                    </button>
-                    <button className={`${styles["action-btn"]} ${styles["delete-btn"]}`} onClick={() => handleDelete(audioId)} title="Xóa">
-                      <i className="fa-solid fa-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+          {items.length === 0 ? (
+            <tr><td colSpan="4" style={{ textAlign: "center", color: "#999", padding: "20px" }}>Chưa có bản dịch nào</td></tr>
+          ) : items.map(t => (
+            <tr key={t.id}>
+              <td><code>{t.narrationPointId}</code></td>
+              <td>{t.translatedName || <span style={{ color: "#999", fontStyle: "italic" }}>Chưa đặt tên</span>}</td>
+              <td title={t.content}>
+                {t.content
+                  ? (t.content.length > 50 ? t.content.substring(0, 50) + "..." : t.content)
+                  : <span style={{ color: "#999", fontStyle: "italic" }}>Chưa có nội dung</span>}
+              </td>
+              <td>
+                <div className={styles["action-buttons"]}>
+                  <button
+                    className={`${styles["action-btn"]} ${styles["play-btn"]}`}
+                    title="Nghe thử TTS"
+                    onClick={() => speakText(t.content)}
+                  >🔊</button>
+                  <button
+                    className={`${styles["action-btn"]} ${styles["edit-btn"]}`}
+                    title="Chỉnh sửa"
+                    onClick={() => openEdit(t)}
+                  ><i className="fa-solid fa-pen" /></button>
+                </div>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
-      {totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} title="Về trang đầu">&laquo;</button>
-          <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} title="Trang trước">&lsaquo;</button>
-          
-          {[...Array(totalPages)].map((_, i) => (
-            <button
-              key={i + 1}
-              onClick={() => setCurrentPage(i + 1)}
-              className={currentPage === i + 1 ? styles.active : ""}
-            >
-              {i + 1}
-            </button>
-          ))}
-          
-          <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} title="Trang sau">&rsaquo;</button>
-          <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} title="Đến trang cuối">&raquo;</button>
-        </div>
-      )}
+      <Pagination current={page} total={totalPages} onChange={setPage} />
 
-      {/* Modal xem chi tiết */}
-      {selectedAudio && !showForm && (() => {
-        const displayId = selectedAudio.audio_id || selectedAudio.id || selectedAudio.Id;
-        const displayTitle = selectedAudio.audio_title || selectedAudio.title || selectedAudio.Title;
-        const displayText = selectedAudio.audio_text || selectedAudio.audioText || selectedAudio.AudioText;
-        const displayUrl = selectedAudio.audio_url || selectedAudio.audioUrl || selectedAudio.AudioUrl;
-        const displayPoi = selectedAudio.poi_id || selectedAudio.narrationPointId || selectedAudio.NarrationPointId;
-
-        return (
-          <div className={styles.modal}>
-            <div className={styles["modal-box"]}>
-              <div className={styles["modal-header"]}>
-                <h2>Chi tiết Audio</h2>
-                <button className={styles["modal-close-icon"]} onClick={() => setSelectedAudio(null)}>
-                  <CloseIcon />
-                </button>
-              </div>
-              <div className={styles["modal-content"]}>
-                <div className={styles["form-group"]}>
-                  <label>ID</label>
-                  <input value={displayId || ""} disabled />
-                </div>
-                <div className={styles["form-group"]}>
-                  <label>Tiêu đề</label>
-                  <input value={displayTitle || ""} disabled />
-                </div>
-                <div className={styles["form-group"]}>
-                  <label>Nội dung thuyết minh</label>
-                  <textarea value={displayText || "Không có nội dung"} disabled rows="4" />
-                </div>
-                <div className={styles["form-group"]}>
-                  <label>URL</label>
-                  <input value={displayUrl || ""} disabled />
-                </div>
-                <div className={styles["form-group"]}>
-                  <label>POI ID</label>
-                  <input value={displayPoi || ""} disabled />
-                </div>
-
-                {displayUrl && (
-                  <div className={styles["form-group"]}>
-                    <label>Phát Audio URL</label>
-                    <audio controls controlsList="nodownload" style={{ width: "100%" }}>
-                      <source src={displayUrl} type="audio/mpeg" />
-                    </audio>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* Modal thêm / sửa */}
-      {showForm && (
+      {/* Modal sửa */}
+      {editing && (
         <div className={styles.modal}>
           <div className={styles["modal-box"]}>
             <div className={styles["modal-header"]}>
-              <h2>{editingAudio ? "Sửa Audio" : "Thêm Audio"}</h2>
-              <button className={styles["modal-close-icon"]}
-                onClick={() => {
-                  setShowForm(false);
-                  setEditingAudio(null);
-                  window.speechSynthesis.cancel();
-                }}
-              >
-                <CloseIcon />
+              <h2>✏️ Sửa bản dịch — POI #{editing.narrationPointId} ({LANGS.find(l => l.code === activeLang)?.label})</h2>
+              <button className={styles["modal-close-icon"]} onClick={() => setEditing(null)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
-            <form className={styles["modal-content"]} onSubmit={handleSubmit}>
+            <div className={styles["modal-content"]}>
               <div className={styles["form-group"]}>
-                <label>ID</label>
-                <input name="audio_id" value={form.audio_id} onChange={handleChange} disabled={editingAudio} />
-              </div>
-              <div className={styles["form-group"]}>
-                <label>Tiêu đề</label>
-                <input name="audio_title" value={form.audio_title} onChange={handleChange} required />
+                <label>Tên địa điểm (translatedName)</label>
+                <input
+                  value={translatedName}
+                  onChange={e => setTranslatedName(e.target.value)}
+                  placeholder="Tên địa điểm đã dịch..."
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ddd" }}
+                />
               </div>
               <div className={styles["form-group"]}>
                 <label style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  Nội dung thuyết minh (Text)
-
-  <div style={{ display: "flex", gap: "6px" }}>
-    <button 
-      type="button" 
-      onClick={handlePreviewSpeak} 
-      style={{ background: "#4caf50", color: "white", border: "none", padding: "2px 8px", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }}
-    >
-      🔊 Nghe thử
-    </button>
-
-    <button 
-      type="button" 
-      onClick={handleGenerateAudio}
-      disabled={isGenerating}
-      style={{ background: "#ff9800", color: "white", border: "none", padding: "2px 8px", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }}
-    >
-      {isGenerating ? "Đang tạo..." : "🎧 Tạo file"}
-    </button>
-  </div>
-</label>
-                <textarea name="audio_text" value={form.audio_text} onChange={handleChange} rows="4" placeholder="Nhập nội dung thuyết minh vào đây..."></textarea>
-              </div>
-              <div className={styles["form-group"]}>
-                <label>URL (Đường dẫn file Audio)</label>
-                <input name="audio_url" value={form.audio_url} onChange={handleChange} required />
-              </div>
-              <div className={styles["form-group"]}>
-                <label>POI ID</label>
-                <input name="poi_id" value={form.poi_id} onChange={handleChange} required />
+                  <span>Nội dung TTS (content)</span>
+                  <button
+                    type="button"
+                    onClick={() => speakText(text)}
+                    style={{ background: "#4caf50", color: "white", border: "none", padding: "4px 10px", borderRadius: "4px", cursor: "pointer", fontSize: "12px" }}
+                  >🔊 Nghe thử</button>
+                </label>
+                <textarea
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  rows="6"
+                  placeholder={`Nhập nội dung thuyết minh (${LANGS.find(l => l.code === activeLang)?.label})...`}
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #ddd", resize: "vertical" }}
+                />
               </div>
               <div className={styles["modal-actions"]}>
-                <button type="submit" className={`${styles["icon-btn"]} ${styles["save-btn"]}`}>
-                  <i className="fa-solid fa-floppy-disk"></i> 
+                <button
+                  type="button"
+                  className={`${styles["icon-btn"]} ${styles["save-btn"]}`}
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Đang lưu..." : <i className="fa-solid fa-floppy-disk" />}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════
+// MAIN COMPONENT
+// ══════════════════════════════════════
+function AudioManager() {
+  const [activeTab, setActiveTab] = useState("vi");
+  const token = sessionStorage.getItem("token");
+
+  return (
+    <div className={styles["audio-container"]}>
+      <div className={styles["audio-header"]}>
+        <h1>🎧 Quản lý Nội dung TTS</h1>
+      </div>
+
+      {/* Tab switcher */}
+      <div style={{ display: "flex", gap: "0", marginBottom: "24px", borderBottom: "2px solid #e2e8f0" }}>
+        {[
+          { key: "vi", label: "🇻🇳 Tiếng Việt" },
+          { key: "trans", label: "🌐 Bản dịch" }
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              padding: "10px 24px",
+              border: "none",
+              borderBottom: activeTab === tab.key ? "3px solid #6a5af9" : "3px solid transparent",
+              background: "none",
+              color: activeTab === tab.key ? "#6a5af9" : "#64748b",
+              fontWeight: activeTab === tab.key ? "700" : "500",
+              cursor: "pointer",
+              fontSize: "14px",
+              transition: "all 0.2s",
+              marginBottom: "-2px"
+            }}
+          >{tab.label}</button>
+        ))}
+      </div>
+
+      {activeTab === "vi"
+        ? <VietnameseTab token={token} />
+        : <TranslationTab token={token} />}
     </div>
   );
 }

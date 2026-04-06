@@ -128,6 +128,24 @@ public class FoodPlaceController : ControllerBase
             }
         }
     }
+    // FoodPlaceController.cs
+// Thêm endpoint mới, giữ nguyên PUT/{id} cũ
+[HttpPatch("{id}/description")]
+public async Task<IActionResult> UpdateDescription(int id, [FromBody] UpdateDescriptionDto dto)
+{
+    var food = await _context.FoodPlaces.FindAsync(id);
+    if (food == null) return NotFound("FoodPlace not found");
+
+    food.Description = dto.Description;
+
+    await _context.SaveChangesAsync();
+    return Ok(new { message = "Update thành công" });
+}
+
+public class UpdateDescriptionDto
+{
+    public string? Description { get; set; }
+}
 }
 
 public class FoodPlaceCreateDto

@@ -13,7 +13,7 @@ public class History
     public string event_type { get; set; }
 
     [Column("users_id")]
-    public string users_id { get; set; }
+    public int? users_id { get; set; }
 
     [Column("narration_points_id")]
     public int NarrationPointId { get; set; }

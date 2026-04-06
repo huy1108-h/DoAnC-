@@ -526,7 +526,7 @@ const handleUpdate = async () => {
                 <div>ĐỊA ĐIỂM</div>
                 <div>DANH MỤC</div>
                 <div>TỌA ĐỘ</div>
-                <div>AUDIO</div>
+                
                 <div>TRẠNG THÁI</div>
                 <div>HÀNH ĐỘNG</div>
               </div>
@@ -562,7 +562,7 @@ const handleUpdate = async () => {
                     <div className="seller-stall-name">{stall.stallName}</div>
                     <div><span className="seller-badge seller-badge-purple">{stall.categoryName || "N/A"}</span></div>
                     <div>{stall.latitude ? Number(stall.latitude).toFixed(6) : 0}, {stall.longitude ? Number(stall.longitude).toFixed(6) : 0}</div>
-                    <div><Headphones size={16} /> {stall.audioCount || 0}</div>
+                    
                     <div>
                      <span className={`seller-badge ${
   stall.status === "Open" || stall.status === "Active" 

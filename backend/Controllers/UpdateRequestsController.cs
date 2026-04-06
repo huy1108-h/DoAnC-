@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
+using System.Text.Json.Serialization;
 
 [Route("api/requests")]
 [ApiController]
@@ -15,19 +16,19 @@ public class UpdateRequestsController : ControllerBase
         _context = context;
     }
 
-  private Stall.StallStatus MapStringToStatus(string status)
-{
-    return status?.ToLower() switch
+    private Stall.StallStatus MapStringToStatus(string status)
     {
-        "open"      => Stall.StallStatus.Active,
-        "active"    => Stall.StallStatus.Active,  // ✅ thêm dòng này
-        "closed"    => Stall.StallStatus.Closed,
-        "pending"   => Stall.StallStatus.Pending,
-        "unclaimed" => Stall.StallStatus.Unclaimed,
-        "rejected"  => Stall.StallStatus.Rejected,
-        _ => Stall.StallStatus.Unclaimed           // ✅ đổi default thành Unclaimed thay vì Closed
-    };
-}
+        return status?.ToLower() switch
+        {
+            "open"      => Stall.StallStatus.Active,
+            "active"    => Stall.StallStatus.Active,
+            "closed"    => Stall.StallStatus.Closed,
+            "pending"   => Stall.StallStatus.Pending,
+            "unclaimed" => Stall.StallStatus.Unclaimed,
+            "rejected"  => Stall.StallStatus.Rejected,
+            _ => Stall.StallStatus.Unclaimed
+        };
+    }
 
     // =========================
     // GET PENDING
@@ -94,17 +95,18 @@ public class UpdateRequestsController : ControllerBase
                     var base64Data = newData.image_url.Split(',')[1];
                     var bytes = Convert.FromBase64String(base64Data);
                     var fileName = Guid.NewGuid() + ".png";
-                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
 
                     if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
                     var filePath = Path.Combine(folder, fileName);
                     await System.IO.File.WriteAllBytesAsync(filePath, bytes, CancellationToken.None);
-                    imagePath = "/uploads/" + fileName;
+                    imagePath = "/images/" + fileName;
                 }
 
                 var statusEnum = MapStringToStatus(newData.status);
-Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
+                Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
+
                 // CASE 1: CLAIM STALL
                 if (request.EntityId > 0 && newData.status == "PendingClaim")
                 {
@@ -114,11 +116,12 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
                     {
                         stall.OwnerId = request.RequesterId;
                         stall.Status = Stall.StallStatus.Active;
-                        stall.IsClaimed = true; 
+                        stall.IsClaimed = true;
                         var poi = await _context.NarrationPoints
                             .FirstOrDefaultAsync(p => p.Id == stall.NarrationPointsId, CancellationToken.None);
                         if (poi != null) poi.IsActive = true;
                     }
+                    // Claim stall không cần lưu ảnh mới vào images
                 }
                 // CASE 2: CREATE NEW STALL
                 else if (request.EntityId == 0)
@@ -134,7 +137,17 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
                         IsActive = (statusEnum == Stall.StallStatus.Active)
                     };
                     _context.NarrationPoints.Add(newPoi);
-                    await _context.SaveChangesAsync(CancellationToken.None);
+                    await _context.SaveChangesAsync(CancellationToken.None); // ← Save để có newPoi.Id
+
+                    // ✅ THÊM MỚI: Lưu ảnh vào bảng images cho mobile app
+                    if (!string.IsNullOrEmpty(imagePath))
+                    {
+                        _context.Images.Add(new Image
+                        {
+                            NarrationPointId = newPoi.Id,
+                            ImageUrl = imagePath
+                        });
+                    }
 
                     var newStall = new Stall
                     {
@@ -156,7 +169,7 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
                     };
                     _context.FoodPlaces.Add(newFood);
                 }
-                // CASE 3: UPDATE EXISTING
+                // CASE 3: UPDATE EXISTING STALL
                 else
                 {
                     var stall = await _context.Stalls
@@ -175,6 +188,16 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
                             poi.Latitude = newData.latitude;
                             poi.Longitude = newData.longitude;
                             poi.IsActive = (statusEnum == Stall.StallStatus.Active);
+
+                            // ✅ THÊM MỚI: Lưu ảnh vào bảng images cho mobile app
+                            if (!string.IsNullOrEmpty(imagePath))
+                            {
+                                _context.Images.Add(new Image
+                                {
+                                    NarrationPointId = poi.Id,
+                                    ImageUrl = imagePath
+                                });
+                            }
                         }
 
                         var food = await _context.FoodPlaces
@@ -193,13 +216,17 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
             {
                 var transData = JsonSerializer.Deserialize<TranslationDataDto>(request.NewDataJson);
                 if (transData == null) return BadRequest("Dữ liệu dịch không hợp lệ");
+                Console.WriteLine($"[DEBUG] Translation entityId = {request.EntityId}");
+                Console.WriteLine($"[DEBUG] languageCode = {transData.languageCode}");
 
                 var lang = await _context.Languages
                     .FirstOrDefaultAsync(l => l.language_code == transData.languageCode, CancellationToken.None);
                 if (lang == null) return BadRequest("Không tìm thấy ngôn ngữ");
+                Console.WriteLine($"[DEBUG] lang.id = {lang.id}");
 
                 var existing = await _context.NarrationTranslations
                     .FirstOrDefaultAsync(t => t.NarrationPointId == request.EntityId && t.LanguageId == lang.id, CancellationToken.None);
+                Console.WriteLine($"[DEBUG] existing found = {existing != null}");
 
                 if (existing != null)
                 {
@@ -208,6 +235,14 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
                 }
                 else
                 {
+                    var poiExists = await _context.NarrationPoints
+                        .AnyAsync(p => p.Id == request.EntityId, CancellationToken.None);
+
+                    Console.WriteLine($"[DEBUG] poiExists = {poiExists}");
+
+                    if (!poiExists)
+                        return BadRequest($"POI {request.EntityId} không tồn tại, không thể tạo bản dịch mới.");
+
                     _context.NarrationTranslations.Add(new NarrationTranslation
                     {
                         NarrationPointId = request.EntityId,
@@ -218,6 +253,21 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
                     });
                 }
             }
+            else if (request.EntityType == "FoodPlace")
+            {
+                var foodData = JsonSerializer.Deserialize<FoodDescriptionDto>(request.NewDataJson);
+
+                if (foodData == null) return BadRequest("Dữ liệu không hợp lệ");
+
+                var food = await _context.FoodPlaces
+                    .FirstOrDefaultAsync(f => f.Id == request.EntityId, CancellationToken.None);
+
+                await _context.SaveChangesAsync(CancellationToken.None);
+                if (food == null) return BadRequest("Không tìm thấy FoodPlace");
+
+                food.Description = foodData.Description;
+            }
+
             request.Status = "Approved";
             await _context.SaveChangesAsync(CancellationToken.None);
 
@@ -243,6 +293,40 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
         return Ok(new { message = "Đã từ chối yêu cầu." });
     }
 
+    [HttpPost("upload-image")]
+    public async Task<IActionResult> UploadImage(IFormFile image, [FromQuery] int narrationPointId)
+    {
+        if (image == null || image.Length == 0)
+            return BadRequest(new { error = "Không có file ảnh" });
+
+        var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
+        if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+        var ext = Path.GetExtension(image.FileName);
+        var fileName = Guid.NewGuid() + ext;
+        var filePath = Path.Combine(folder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await image.CopyToAsync(stream, CancellationToken.None);
+        }
+
+        var path = "/images/" + fileName;
+
+        // ✅ Lưu vào bảng images để app đọc được (giữ nguyên cũ)
+        if (narrationPointId > 0)
+        {
+            _context.Images.Add(new Image
+            {
+                NarrationPointId = narrationPointId,
+                ImageUrl = path
+            });
+            await _context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        return Ok(new { path });
+    }
+
     // --- DTOs ---
     public class StallDataDto
     {
@@ -266,11 +350,18 @@ Console.WriteLine($"[DEBUG] statusEnum = {statusEnum}");
         public string content { get; set; } = string.Empty;
         public string translatedName { get; set; } = string.Empty;
     }
-   public class AudioDataDto
-{
-    public string title { get; set; } = string.Empty;
-    public string audioUrl { get; set; } = string.Empty;
-    public string audioText { get; set; } = string.Empty;
-    public int narrationPointId { get; set; }
-}
+
+    public class AudioDataDto
+    {
+        public string title { get; set; } = string.Empty;
+        public string audioUrl { get; set; } = string.Empty;
+        public string audioText { get; set; } = string.Empty;
+        public int narrationPointId { get; set; }
+    }
+
+    public class FoodDescriptionDto
+    {
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+    }
 }
