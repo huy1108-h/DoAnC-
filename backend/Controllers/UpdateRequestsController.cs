@@ -188,7 +188,7 @@ public class UpdateRequestsController : ControllerBase
                             poi.Latitude = newData.latitude;
                             poi.Longitude = newData.longitude;
                             poi.IsActive = (statusEnum == Stall.StallStatus.Active);
-
+                             if (!string.IsNullOrEmpty(imagePath)) poi.ImageWeb = imagePath;
                             // ✅ THÊM MỚI: Lưu ảnh vào bảng images cho mobile app
                             if (!string.IsNullOrEmpty(imagePath))
                             {

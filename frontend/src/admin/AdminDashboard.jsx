@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserManager from "./UserManager";
 import PoiManager from "./PoiManager";
@@ -12,7 +12,6 @@ import "../css/AdminDashboard.css";
 function AdminDashboard() {
   const [overview, setOverview] = useState(null);
   const [activeTab, setActiveTab] = useState(sessionStorage.getItem("activeTab") || "overview");
-  const [showNotify, setShowNotify] = useState(false);
   const navigate = useNavigate();
   const userName = sessionStorage.getItem("userName");
   const token = sessionStorage.getItem("token");
@@ -164,6 +163,7 @@ function AdminDashboard() {
             );
           })}
         </div>
+        
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={handleLogout}>Đăng xuất</button>
         </div>
