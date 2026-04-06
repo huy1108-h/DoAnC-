@@ -219,7 +219,7 @@ function App() {
   const [showEntryModeModal, setShowEntryModeModal] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
-  const API_BASE = "http://172.20.10.4:5111/api"; 
+  const API_BASE = "http://172.20.10.2:5111/api"; 
   const t = translations[lang] || translations["vi"];
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -768,8 +768,8 @@ function App() {
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 20000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}>
           <div style={{ backgroundColor: "white", padding: "30px", borderRadius: "28px", width: "85%", maxWidth: "350px", textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
             <div style={{ fontSize: "50px", marginBottom: "10px" }}>🧭</div>
-            <h3 style={{ fontSize: "22px", fontWeight: "900", margin: "0 0 10px 0" }}>{t.modalEntryTitle}</h3>
-            <p style={{ fontSize: "14px", color: "#636E72", margin: "0 0 25px 0" }}>{t.modalEntryDesc}</p>
+            <h3 style={{ fontSize: "22px", fontWeight: "900", margin: "0 0 10px 0" }}>Chọn chế độ khám phá</h3>
+            <p style={{ fontSize: "14px", color: "#636E72", margin: "0 0 25px 0" }}>Bạn muốn tự động xem lộ trình hay sử dụng định vị GPS thực tế?</p>
             
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {/* NÚT CHỌN TOUR ẢO */}
@@ -778,11 +778,12 @@ function App() {
                 setCurrentTourIndex(0); 
                 setShowEntryModeModal(false); 
               }} style={{ backgroundColor: "#4285F4", color: "white", border: "none", padding: "15px", borderRadius: "15px", fontWeight: "800", cursor: "pointer" }}>
-                {t.btnVirtualTour}
+                🔄 Chạy Tour ảo tự động
               </button>
 
               {/* NÚT CHỌN GPS THẬT */}
               <button onClick={() => { 
+                // Tẩy não thêm lần nữa cho chắc cốp
                 setIsVirtualTour(false); 
                 setCurrentTourIndex(-1); 
                 speakingIndexRef.current = -1;
@@ -791,9 +792,9 @@ function App() {
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
                 
                 setShowEntryModeModal(false); 
-                alert(t.alertGPSOn); // Đổi alert thành tiếng Anh/Trung luôn
+                alert("Chế độ GPS đã bật! Hãy di chuyển hoặc dùng Fake GPS.");
               }} style={{ backgroundColor: "#00E5FF", color: "#1A1A1A", border: "none", padding: "15px", borderRadius: "15px", fontWeight: "800", cursor: "pointer" }}>
-                {t.btnRealGPS}
+                📍 Sử dụng GPS thực tế
               </button>
             </div>
           </div>
