@@ -12,6 +12,7 @@ import "../css/AdminDashboard.css";
 function AdminDashboard() {
   const [overview, setOverview] = useState(null);
   const [activeTab, setActiveTab] = useState(sessionStorage.getItem("activeTab") || "overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const userName = sessionStorage.getItem("userName");
   const token = sessionStorage.getItem("token");
@@ -140,7 +141,12 @@ function AdminDashboard() {
 
   return (
     <div className="admin-container">
-      <div className="sidebar">
+       <div
+          className={`sidebar-overlay ${sidebarOpen ? "show" : ""}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+         
+        <div className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-header">
           <div className="cms-title">👑 Xin chào, {userName}</div>
         </div>
@@ -170,12 +176,23 @@ function AdminDashboard() {
       </div>
 
       <div className="main-content">
+         <div className="topbar">
+            <button
+              className="hamburger-btn"
+              onClick={() => setSidebarOpen(prev => !prev)}
+              aria-label="Mở menu"
+            >
+              <span /><span /><span />
+            </button>
+              <span className="topbar-title">📊 Tổng quan hệ thống</span>
+            <span className="topbar-date">{new Date().toLocaleDateString("vi-VN")}</span>
+          </div>
         <div className="page-content">
           {renderContent()}
         </div>
       </div>
 
-      {/* CHUÔNG THÔNG BÁO NỔI */}
+    
     
     </div>
   );

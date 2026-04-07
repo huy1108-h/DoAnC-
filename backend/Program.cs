@@ -46,7 +46,7 @@ builder.Services.AddAuthentication("Bearer")
     });
 
 builder.Services.AddAuthorization();
-
+builder.Services.AddSingleton<SupabaseStorageService>();
 var app = builder.Build();
 
 // 4. Khởi tạo dữ liệu Seed Data (Admin mặc định)

@@ -15,7 +15,7 @@ function TourManager() {
 
   const [newTour, setNewTour] = useState({
     name: "",
-    description: "",
+    
     duration: "",
     status: "Active"
   });
@@ -95,7 +95,7 @@ function TourManager() {
     // Điền thông tin cũ vào state form
     setNewTour({
       name: tour.name,
-      description: tour.description,
+      
       duration: tour.duration,
       status: tour.status || "Active"
     });
@@ -129,7 +129,7 @@ function TourManager() {
 
   // ================= RESET FORM =================
   const handleCloseModal = () => {
-    setNewTour({ name: "", description: "", duration: 30, status: "Active" });
+    setNewTour({ name: "", duration: 30, status: "Active" });
     setSelectedPois([]);
     setError("");
     setEditingTourId(null); // Trả lại chế độ Create
@@ -166,7 +166,7 @@ function TourManager() {
 
             {/* Thông tin tour */}
             <h3>{t.name}</h3>
-            <p className="tour-desc">{t.description}</p>
+           
             <p className="tour-duration">⏱ <strong>{t.duration}</strong> phút</p>
 
             {/* POI List */}
@@ -228,14 +228,7 @@ function TourManager() {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Mô tả</label>
-                <textarea
-                  placeholder="Mô tả chi tiết về tour..."
-                  value={newTour.description}
-                  onChange={e => setNewTour({...newTour, description: e.target.value})}
-                />
-              </div>
+             
 
               <div className="form-group">
                 <label>Thời lượng (phút)</label>
@@ -294,7 +287,7 @@ function TourManager() {
             </div>
 
             <div className="modal-body">
-              <p>{viewTour.description}</p>
+             
               <p style={{marginTop: '15px'}}>⏱ <strong>{viewTour.duration}</strong> phút</p>
               
               <div className="tour-poi-list">

@@ -7,10 +7,12 @@ using static Stall;
 public class NarrationPointController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly SupabaseStorageService _storage;
 
-    public NarrationPointController(AppDbContext context)
+    public NarrationPointController(AppDbContext context, SupabaseStorageService storage)
     {
         _context = context;
+        _storage = storage;
     }
 
     public class CreatePoiDto
@@ -67,16 +69,29 @@ public class NarrationPointController : ControllerBase
         if (dto.CategoryId == 0)
             return BadRequest("categoryId is required");
 
-        string? imagePath = null;
+        string? localPath = null;
+        string? supaUrl = null;
+
         if (dto.Image != null)
         {
+            // Đọc bytes 1 lần dùng cho cả 2 mục đích
+            byte[] fileBytes;
+            using (var ms = new MemoryStream())
+            {
+                await dto.Image.CopyToAsync(ms);
+                fileBytes = ms.ToArray();
+            }
+
+            // ✅ 1. Lưu local cho admin
             var fileName = Guid.NewGuid() + Path.GetExtension(dto.Image.FileName);
             var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-            var filePath = Path.Combine(folder, fileName);
-            using var stream = new FileStream(filePath, FileMode.Create);
-            await dto.Image.CopyToAsync(stream);
-            imagePath = "/images/" + fileName;
+            await System.IO.File.WriteAllBytesAsync(Path.Combine(folder, fileName), fileBytes);
+            localPath = "/images/" + fileName;
+
+            // ✅ 2. Upload lên Supabase Storage cho mobile
+            using var supaStream = new MemoryStream(fileBytes);
+            supaUrl = await _storage.UploadAsync(supaStream, dto.Image.FileName, dto.Image.ContentType);
         }
 
         var point = new NarrationPoint
@@ -87,22 +102,22 @@ public class NarrationPointController : ControllerBase
             ActivationRadius = dto.ActivationRadius,
             Priority = dto.Priority,
             IsActive = dto.IsActive,
-            ImageWeb = imagePath,
+            ImageWeb = localPath,
             IsCommercial = true,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
 
         _context.NarrationPoints.Add(point);
-        await _context.SaveChangesAsync(); // ← Save để có point.Id
+        await _context.SaveChangesAsync();
 
-        // ✅ THÊM MỚI: Lưu ảnh vào bảng images cho mobile app
-        if (!string.IsNullOrEmpty(imagePath))
+        // ✅ 3. Lưu Supabase URL vào bảng images cho mobile
+        if (!string.IsNullOrEmpty(supaUrl))
         {
             _context.Images.Add(new Image
             {
                 NarrationPointId = point.Id,
-                ImageUrl = imagePath
+                ImageUrl = supaUrl
             });
         }
 
@@ -114,7 +129,7 @@ public class NarrationPointController : ControllerBase
             OwnerId = null,
             Latitude = (float?)dto.Latitude,
             Longitude = (float?)dto.Longitude,
-            ImageUrl = imagePath
+            ImageUrl = localPath
         });
 
         _context.FoodPlaces.Add(new FoodPlace
@@ -126,7 +141,7 @@ public class NarrationPointController : ControllerBase
             Description = dto.Description
         });
 
-        await _context.SaveChangesAsync(); // ← Save Stall + FoodPlace + Image cùng lúc
+        await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(Get), new { id = point.Id }, point);
     }
 
@@ -145,33 +160,44 @@ public class NarrationPointController : ControllerBase
         item.Priority = updated.Priority;
         item.UpdatedAt = DateTime.UtcNow;
 
-        // ✅ THÊM MỚI: Xử lý ảnh mới nếu admin upload khi cập nhật
+        // ✅ Xử lý ảnh mới nếu admin upload khi cập nhật
         var imageFile = Request.Form.Files["image"];
         if (imageFile != null && imageFile.Length > 0)
         {
+            // Đọc bytes 1 lần dùng cho cả 2 mục đích
+            byte[] fileBytes;
+            using (var ms = new MemoryStream())
+            {
+                await imageFile.CopyToAsync(ms);
+                fileBytes = ms.ToArray();
+            }
+
+            // ✅ 1. Lưu local cho admin
             var fileName = Guid.NewGuid() + Path.GetExtension(imageFile.FileName);
             var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images");
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
-            using var stream = new FileStream(Path.Combine(folder, fileName), FileMode.Create);
-            await imageFile.CopyToAsync(stream);
+            await System.IO.File.WriteAllBytesAsync(Path.Combine(folder, fileName), fileBytes);
+            var localPath = "/images/" + fileName;
+            item.ImageWeb = localPath;
 
-            var imagePath = "/images/" + fileName;
+            // ✅ 2. Upload lên Supabase Storage cho mobile
+            using var supaStream = new MemoryStream(fileBytes);
+            var supaUrl = await _storage.UploadAsync(supaStream, imageFile.FileName, imageFile.ContentType);
 
-            // Cập nhật ảnh trên NarrationPoint (web)
-            item.ImageWeb = imagePath;
-
-            // ✅ Lưu vào bảng images cho mobile app
+            // ✅ 3. Xóa ảnh cũ trong bảng images, insert Supabase URL mới
+            var oldImages = _context.Images.Where(i => i.NarrationPointId == id);
+            _context.Images.RemoveRange(oldImages);
             _context.Images.Add(new Image
             {
                 NarrationPointId = id,
-                ImageUrl = imagePath
+                ImageUrl = supaUrl
             });
 
-            // Cập nhật ảnh trên Stall luôn
+            // Cập nhật stall luôn
             var stallForImage = await _context.Stalls
                 .FirstOrDefaultAsync(s => s.NarrationPointsId == id);
             if (stallForImage != null)
-                stallForImage.ImageUrl = imagePath;
+                stallForImage.ImageUrl = localPath;
         }
 
         var foodPlace = await _context.FoodPlaces

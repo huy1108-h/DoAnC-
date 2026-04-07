@@ -30,7 +30,6 @@ public class TourController : ControllerBase
             {
                 t.id,
                 t.name,
-                t.description,
                 t.duration,
                 t.status,
                 t.created_at,
@@ -59,7 +58,6 @@ public class TourController : ControllerBase
             {
                 t.id,
                 t.name,
-                t.description,
                 t.duration,
                 t.status,
 
@@ -87,7 +85,7 @@ public IActionResult CreateTour([FromBody] TourCreateDto dto)
         var tour = new Tour 
         {
             name = dto.name,
-            description = dto.description,
+            
             duration = dto.duration,
             status = dto.status,
             created_at = DateTime.UtcNow
@@ -145,11 +143,11 @@ public IActionResult Update(int id, [FromBody] TourCreateDto dto)
             connection.Open();
 
             // 1. Cập nhật thông tin Tour chính
-            string updateTourSql = "UPDATE tours SET name = @name, description = @desc, duration = @dur, status = @status WHERE id = @id";
+            string updateTourSql = "UPDATE tours SET name = @name,duration = @dur, status = @status WHERE id = @id";
             using (var cmdTour = new NpgsqlCommand(updateTourSql, connection))
             {
                 cmdTour.Parameters.AddWithValue("name", dto.name);
-                cmdTour.Parameters.AddWithValue("desc", dto.description ?? (object)DBNull.Value);
+                
                 cmdTour.Parameters.AddWithValue("dur", dto.duration);
                 cmdTour.Parameters.AddWithValue("status", dto.status);
                 cmdTour.Parameters.AddWithValue("id", id);
@@ -249,7 +247,7 @@ public IActionResult Delete(int id)
             {
                 t.id,
                 t.name,
-                t.description,
+                
                 t.duration,
 
                 tour_pois = t.TourPois.Select(tp => new
@@ -287,7 +285,7 @@ public IActionResult Delete(int id)
 public class TourCreateDto
 {
     public string name { get; set; }
-    public string description { get; set; }
+
     public int duration { get; set; }
     public string status { get; set; }
     public List<int> poi_ids { get; set; }
@@ -297,7 +295,7 @@ public class TourResponseDto
 {
     public int id { get; set; }
     public string name { get; set; }
-    public string description { get; set; }
+    
     public int duration { get; set; }
     public string status { get; set; }
     public List<int> poi_ids { get; set; } // Trả về ID để khớp với logic React

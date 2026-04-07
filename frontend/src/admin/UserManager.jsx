@@ -36,6 +36,7 @@ function UserManager() {
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const token = sessionStorage.getItem("token");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
 
 const [newUser, setNewUser] = useState({
@@ -112,7 +113,12 @@ const addUser = async () => {
 
  return (
   <div className={styles["user-container"]}>
-
+ <div
+          className={`sidebar-overlay ${sidebarOpen ? "show" : ""}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+         
+        <div className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}></div>
     <div className={styles["user-header"]}>
       <h1>👥 Quản lý người dùng</h1>
 
@@ -139,30 +145,30 @@ const addUser = async () => {
       <tbody>
         {users.map((u)=>(
           <tr key={u.userName}>
-            <td>{u.userName}</td>
-            <td>{u.userRole}</td>
-            <td>{u.email}</td>
-            <td>{u.phone}</td>
+  <td data-label="Username">{u.userName}</td>
+  <td data-label="Role">{u.userRole}</td>
+  <td data-label="Email">{u.email}</td>
+  <td data-label="Phone">{u.phone}</td>
 
-            <td>
-              <div className={
-                u.status === "Active"
-                ? styles["status-active"]
-                : styles["status-lock"]
-              }>
-                {u.status}
-              </div>
-            </td>
+  <td data-label="Status">
+    <div className={
+      u.status === "Active"
+      ? styles["status-active"]
+      : styles["status-lock"]
+    }>
+      {u.status}
+    </div>
+  </td>
 
-            <td>
-              <button
-                className={styles["view-btn"]}
-                onClick={()=>setSelectedUser({...u})}
-              >
-                <ViewIcon/>
-              </button>
-            </td>
-          </tr>
+  <td data-label="Action">
+    <button
+      className={styles["view-btn"]}
+      onClick={()=>setSelectedUser({...u})}
+    >
+      <ViewIcon/>
+    </button>
+  </td>
+</tr>
         ))}
       </tbody>
     </table>

@@ -11,8 +11,6 @@ public class Tour
     [Column("name")]
     public string name { get; set; }
 
-    [Column("description")]
-    public string description { get; set; }
 
     [Column("duration")]
     public int duration { get; set; }

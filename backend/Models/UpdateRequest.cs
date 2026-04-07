@@ -23,9 +23,6 @@ public class UpdateRequest
     [Column("status")]
     public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
 
-    [Column("admin_note")]
-    public string? AdminNote { get; set; } // Lý do nếu Admin từ chối
-
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
