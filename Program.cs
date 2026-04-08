@@ -5,7 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 //  1. CẤU HÌNH KẾT NỐI SUPABASE (THAY THẾ MYSQL/XAMPP)
 // Lấy URL và Anon Key từ Dashboard Supabase -> Settings -> API
-var supabaseUrl = "https://ameltluzxyvxxabuqtxc.supabase.co"; // 👈 Thay link thật của bạn vào đây
+var supabaseUrl = "https://ameltluzxyvxxabuqtxc.supabase.co"; 
 var supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtZWx0bHV6eHl2eHhhYnVxdHhjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwMDI5NDIsImV4cCI6MjA4OTU3ODk0Mn0.cZUGOwlgIyrefd1IRCKG7qWxPZQW-0lRVuyL6wRB0mg"; // 👈 Thay Key thật của bạn vào đây
 
 builder.Services.AddScoped(_ => 

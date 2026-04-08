@@ -69,7 +69,9 @@ public async Task<IActionResult> Get(string lang = "vi")
                         price_range = foodPlace != null ? foodPlace.price_range : "Chưa có giá",
                         opening_hours = foodPlace != null ? foodPlace.opening_hours : "Chưa có giờ mở cửa",
                         category = category != null ? category.name : "Chưa phân loại",
-                        image_url = i != null ? i.image_url : "https://via.placeholder.com/180x120"
+                        image_url = i != null ? i.image_url : "https://via.placeholder.com/180x120",
+
+                        is_active = np.is_active
                     };
 
         // Nhóm lại để tránh trùng lặp địa điểm
@@ -91,6 +93,8 @@ public async Task<IActionResult> Get(string lang = "vi")
         [Column("name")] public string name { get; set; }
         [Column("latitude")] public double latitude { get; set; }
         [Column("longitude")] public double longitude { get; set; }
+
+        [Column("is_active")] public bool is_active { get; set; }
     }
 
     [Table("food_places")]
