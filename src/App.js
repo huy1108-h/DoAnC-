@@ -115,8 +115,8 @@ L.Icon.Default.mergeOptions({
 // ✅ COMPONENT TỰ ĐỘNG DI CHUYỂN CAMERA
 function AutoPan({ position }) {
   const map = useMap();
-  useEffect(() => { 
-    if (position && map) map.flyTo(position, 18, { animate: true, duration: 1.5 }); 
+  useEffect(() => {
+    if (position && map) map.flyTo(position, 18, { animate: true, duration: 1.5 });
   }, [map, position]);
   return null;
 }
@@ -144,7 +144,9 @@ const translations = {
     btnVirtualTour: "🔄 Chạy Tour ảo tự động",
     btnRealGPS: "📍 Sử dụng GPS thực tế",
     alertGPSOn: "Chế độ GPS đã bật! Hãy di chuyển hoặc dùng Fake GPS.",
-    confirmGPSMsg: "Hệ thống: Bạn đã nghe xong thông tin từ GPS.\n\n- Bấm OK: Để App TỰ ĐỘNG chạy lộ trình tiếp theo (Tour ảo).\n- Bấm CANCEL: Để tiếp tục di chuyển bằng GPS thật."
+    confirmGPSMsg: "Hệ thống: Bạn đã nghe xong thông tin từ GPS.\n\n- Bấm OK: Để App TỰ ĐỘNG chạy lộ trình tiếp theo (Tour ảo).\n- Bấm CANCEL: Để tiếp tục di chuyển bằng GPS thật.",
+    isOpen: "🟢 Đang mở",
+    isClosed: "🔴 Đã đóng cửa"
   },
   en: {
     navHome: "Explore", navFav: "Saved", navMap: "Map", navProfile: "Profile",
@@ -167,7 +169,9 @@ const translations = {
     btnVirtualTour: "🔄 Auto Virtual Tour",
     btnRealGPS: "📍 Use Real GPS",
     alertGPSOn: "GPS Mode enabled! Please move or use Fake GPS.",
-    confirmGPSMsg: "System: GPS information finished.\n\n- Click OK: To auto-play the next location (Virtual Tour).\n- Click CANCEL: To continue using real GPS."
+    confirmGPSMsg: "System: GPS information finished.\n\n- Click OK: To auto-play the next location (Virtual Tour).\n- Click CANCEL: To continue using real GPS.",
+    isOpen: "🟢 Open",
+    isClosed: "🔴 Closed"
   },
   zh: {
     navHome: "探索", navFav: "收藏", navMap: "地图", navProfile: "我的",
@@ -190,36 +194,40 @@ const translations = {
     btnVirtualTour: "🔄 自动虚拟导览",
     btnRealGPS: "📍 使用真实 GPS",
     alertGPSOn: "GPS模式已开启！请移动或使用虚拟GPS。",
-    confirmGPSMsg: "系统：GPS信息播报完毕。\n\n- 点击确定：自动播放下一位置（虚拟导览）。\n- 点击取消：继续使用真实GPS。"
+    confirmGPSMsg: "系统：GPS信息播报完毕。\n\n- 点击确定：自动播放下一位置（虚拟导览）。\n- 点击取消：继续使用真实GPS。",
+    isOpen: "🟢 营业中",
+    isClosed: "🔴 已打烊"
   }
 };
 
 function App() {
-  const [places, setPlaces] = useState([]); 
-  const [orderedPlaces, setOrderedPlaces] = useState([]); 
+  const [places, setPlaces] = useState([]);
+  const [orderedPlaces, setOrderedPlaces] = useState([]);
   const [activeTab, setActiveTab] = useState("home");
-  const [currentTourIndex, setCurrentTourIndex] = useState(-1); 
+  const [currentTourIndex, setCurrentTourIndex] = useState(-1);
   const [userId] = useState(localStorage.getItem("user_id"));
   const [favoriteIds, setFavoriteIds] = useState([]);
   const [lang, setLang] = useState(localStorage.getItem("app_lang") || "vi");
   const [dataLang, setDataLang] = useState(lang);
   const [selectedPlace, setSelectedPlace] = useState(null);
-  const [userLocation, setUserLocation] = useState(null); 
+  const [userLocation, setUserLocation] = useState(null);
   const [visitedPlaces, setVisitedPlaces] = useState(new Set());
-  const [tours, setTours] = useState([]); 
-  const [selectedTourId, setSelectedTourId] = useState(null); 
+  const [tours, setTours] = useState([]);
+  const [selectedTourId, setSelectedTourId] = useState(null);
   const [allPlacesBackup, setAllPlacesBackup] = useState([]);
 
   const speakingIndexRef = useRef(-1);
   const speakTimeoutRef = useRef(null);
+  const isReadingRef = useRef(false);     // khóa: đang đọc thì không nhảy sang quán khác
+  const pendingVirtualTour = useRef(false); // cờ: đợi orderedPlaces load xong rồi mới bắt đầu tour ảo
 
   // CÁC BIẾN QUẢN LÝ CHẾ ĐỘ MAP
-  const [isVirtualTour, setIsVirtualTour] = useState(false); 
-  const [currentShopId, setCurrentShopId] = useState(null); 
+  const [isVirtualTour, setIsVirtualTour] = useState(false);
+  const [currentShopId, setCurrentShopId] = useState(null);
   const [showEntryModeModal, setShowEntryModeModal] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
-  const API_BASE = "http://172.20.10.2:5111/api"; 
+  const API_BASE = "https://lionel-noisome-rurally.ngrok-free.dev/api";
   const t = translations[lang] || translations["vi"];
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -234,7 +242,7 @@ function App() {
     if (!rawPlaces || rawPlaces.length === 0) return [];
     let unvisited = [...rawPlaces];
     let route = [];
-    let currentPos = { lat: 10.7619, lon: 106.7020 }; 
+    let currentPos = { lat: 10.7619, lon: 106.7020 };
     while (unvisited.length > 0) {
       let nearestIndex = 0;
       let minDistance = calculateDistance(currentPos.lat, currentPos.lon, unvisited[0].latitude, unvisited[0].longitude);
@@ -250,12 +258,16 @@ function App() {
   }, []);
 
   const markAsVisited = useCallback((place) => {
-    if (place && place.id && !visitedPlaces.has(place.id)) {
-      setVisitedPlaces((prev) => new Set(prev).add(place.id));
+    if (place && place.id) {
+      setVisitedPlaces((prev) => {
+        if (prev.has(place.id)) return prev;
+        const newSet = new Set(prev);
+        newSet.add(place.id);
+        return newSet;
+      });
     }
-  }, [visitedPlaces]);
+  }, []);
 
-  // HÀM ĐỌC ÂM THANH XỊN (CHỐNG LỖI ANDROID)
   const speak = useCallback((textToSpeak, onEnd) => {
     if (speakTimeoutRef.current) { clearTimeout(speakTimeoutRef.current); speakTimeoutRef.current = null; }
     if (window.tourAudio) { window.tourAudio.pause(); window.tourAudio.src = ""; }
@@ -266,8 +278,17 @@ function App() {
       if (navigator.onLine) {
         const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(textToSpeak)}&tl=${lang}&client=tw-ob`;
         window.tourAudio = new Audio(url);
-        window.tourAudio.onended = onEnd;
-        window.tourAudio.play().catch(() => { if(onEnd) speakTimeoutRef.current = setTimeout(onEnd, 1000); });
+        // Fallback: nếu onended không fire thì tự động gọi onEnd sau thời gian ước tính
+        const fallbackTime = Math.max(textToSpeak.length * 80, 3000);
+        speakTimeoutRef.current = setTimeout(() => { if (onEnd) onEnd(); }, fallbackTime);
+        window.tourAudio.onended = () => {
+          if (speakTimeoutRef.current) { clearTimeout(speakTimeoutRef.current); speakTimeoutRef.current = null; }
+          if (onEnd) onEnd();
+        };
+        window.tourAudio.play().catch(() => {
+          if (speakTimeoutRef.current) { clearTimeout(speakTimeoutRef.current); speakTimeoutRef.current = null; }
+          speakTimeoutRef.current = setTimeout(() => { if (onEnd) onEnd(); }, 1000);
+        });
       } else { if (onEnd) onEnd(); }
     };
 
@@ -275,24 +296,29 @@ function App() {
       window.AndroidBridge.stop();
       window.AndroidBridge.speak(textToSpeak, lang);
       if (onEnd) {
-        const estimatedTime = textToSpeak.length * 90;
-        speakTimeoutRef.current = setTimeout(onEnd, Math.max(estimatedTime, 2000)); 
+        const estimatedTime = textToSpeak.length * 80;
+        speakTimeoutRef.current = setTimeout(onEnd, Math.max(estimatedTime, 2000));
       }
-    } else {
-      if (synth) {
-        const msg = new SpeechSynthesisUtterance(textToSpeak);
-        window.currentUtterance = msg; 
-        msg.lang = lang === "en" ? "en-US" : (lang === "zh" ? "zh-CN" : "vi-VN");
-        msg.rate = 1.0;
-        if (onEnd) {
-            msg.onend = onEnd;
-            const estimatedTime = textToSpeak.length * 90;
-            speakTimeoutRef.current = setTimeout(() => { synth.cancel(); onEnd(); }, Math.max(estimatedTime, 2000) + 2000);
-        }
-        msg.onerror = () => playGoogleOnline();
-        setTimeout(() => { synth.speak(msg); }, 50);
-      } else { playGoogleOnline(); }
-    }
+    } else if (synth) {
+      const msg = new SpeechSynthesisUtterance(textToSpeak);
+      window.currentUtterance = msg;
+      msg.lang = lang === "en" ? "en-US" : (lang === "zh" ? "zh-CN" : "vi-VN");
+      msg.rate = 1.0;
+      if (onEnd) {
+        msg.onend = () => {
+          if (speakTimeoutRef.current) clearTimeout(speakTimeoutRef.current);
+          onEnd();
+        };
+        const fallbackTime = textToSpeak.length * 100;
+        speakTimeoutRef.current = setTimeout(() => { synth.cancel(); onEnd(); }, Math.max(fallbackTime, 3000));
+      }
+      msg.onerror = () => {
+        // Hủy fallback của synth trước khi chuyển sang Google TTS, tránh onEnd bị gọi 2 lần
+        if (speakTimeoutRef.current) { clearTimeout(speakTimeoutRef.current); speakTimeoutRef.current = null; }
+        playGoogleOnline();
+      };
+      setTimeout(() => { synth.speak(msg); }, 50);
+    } else { playGoogleOnline(); }
   }, [lang]);
 
   // HÀM ĐỌC DÀNH RIÊNG CHO GPS
@@ -301,7 +327,7 @@ function App() {
     const prefix = lang === "vi" ? "Hệ thống GPS xác nhận bạn đã đến gần " : (lang === "zh" ? "GPS系统确认您已接近 " : "GPS system confirms you are near ");
     const fullText = `${prefix} ${shopName}. ${description}`;
     speak(fullText, () => {
-      showChoiceModal(); 
+      showChoiceModal();
     });
   };
 
@@ -310,7 +336,7 @@ function App() {
     const userChoice = window.confirm(t.confirmGPSMsg);
     if (userChoice) {
       setIsVirtualTour(true);
-      setCurrentTourIndex(prev => (prev === -1 ? 0 : prev)); 
+      setCurrentTourIndex(prev => (prev === -1 ? 0 : prev));
     } else {
       setIsVirtualTour(false);
     }
@@ -331,31 +357,42 @@ function App() {
       });
     };
 
-        const cleanImageUrl = (url) => {
+    const cleanImageUrl = (url) => {
       if (!url) return "";
-      
-      if (url.includes("supabase.co") || url.startsWith("https://")) return url; 
 
-      let path = url.replace("http://10.0.2.2:5111", "").replace("http://192.168.1.11:5111", "");
-      if (!path.startsWith("/")) path = "/" + path; 
+      // Giữ nguyên nếu là link web ngoài (Supabase)
+      if (url.includes("supabase.co") || url.startsWith("http")) return url;
 
-      // Lấy IP hiện tại của API (Ví dụ: "http://192.168.x.x:5111")
-      const serverBaseUrl = API_BASE.replace("/api", ""); 
+      // Gọt sạch các phần thừa, chỉ lấy từ chữ "images/" trở đi
+      let path = url;
+      if (path.includes("images/")) {
+        path = "images/" + path.split("images/")[1];
+      } else if (path.startsWith("/")) {
+        path = path.substring(1);
+      }
 
-      return serverBaseUrl + path; 
+      // Nối với IP API hiện tại để load ảnh từ máy tính (Back-End)
+      const serverBaseUrl = API_BASE.replace("/api", "/");
+      return serverBaseUrl + path;
+    };
+
+    // Tạo chìa khóa vạn năng (Base64 encoding của User:Pass)
+    const headers = {
+      "Authorization": "Basic " + btoa("11303626:60-dayfreetrial")
     };
 
     const loadData = async () => {
       try {
+        const headers = { "ngrok-skip-browser-warning": "true" };
         const [toursRes, tpRes, placesRes] = await Promise.all([
-          fetch(`${API_BASE}/tours?lang=${lang}`), // <--- Bổ sung ?lang=${lang} vào đây
-          fetch(`${API_BASE}/tours/pois`),
-          fetch(`${API_BASE}/places?lang=${lang}`)
+          fetch(`${API_BASE}/tours?lang=${lang}`, { headers }),
+          fetch(`${API_BASE}/tours/pois`, { headers }),
+          fetch(`${API_BASE}/places?lang=${lang}`, { headers })
         ]);
         const toursData = await toursRes.json();
         const tourPoisData = await tpRes.json();
         const placesRaw = await placesRes.json();
-        
+
         localStorage.setItem("cache_tours", JSON.stringify(toursData));
         localStorage.setItem("cache_tour_pois", JSON.stringify(tourPoisData));
         localStorage.setItem(`cache_places_${lang}`, JSON.stringify(placesRaw));
@@ -365,15 +402,19 @@ function App() {
         setAllPlacesBackup(allProcessed);
         setDataLang(lang);
 
+        // ✅ ONLINE: Lọc ở ngay trong Try/Catch để thấy biến toursData, tourPoisData
         if (selectedTourId) {
-           const poiIdsForThisTour = tourPoisData.filter(tp => tp.tour_id === selectedTourId).map(tp => tp.poi_id);
-           const tourPlaces = allProcessed.filter(p => poiIdsForThisTour.includes(p.id));
-           setPlaces(tourPlaces);
-           setOrderedPlaces(sortPlacesByRoute(tourPlaces));
+          const poiIdsForThisTour = tourPoisData
+            .filter(tp => Number(tp.tour_id) === Number(selectedTourId))
+            .map(tp => Number(tp.poi_id));
+
+          const tourPlaces = allProcessed.filter(p => poiIdsForThisTour.includes(Number(p.id)));
+          setPlaces(tourPlaces);
+          setOrderedPlaces(sortPlacesByRoute(tourPlaces));
         } else {
-           const homePlaces = allProcessed.filter(p => !p.name.toLowerCase().includes("cổng"));
-           setPlaces(homePlaces);
-           setOrderedPlaces(sortPlacesByRoute(homePlaces));
+          const homePlaces = allProcessed.filter(p => !p.name.toLowerCase().includes("cổng"));
+          setPlaces(homePlaces);
+          setOrderedPlaces(sortPlacesByRoute(homePlaces));
         }
       } catch (err) {
         console.log("Mất mạng! Đang tìm dữ liệu trong Storage...");
@@ -391,15 +432,19 @@ function App() {
           setAllPlacesBackup(allProcessed);
           setDataLang(lang);
 
+          // ✅ CACHING: Lọc ở đây để thấy biến allProcessed và tourPoisData (Cache)
           if (selectedTourId) {
-             const poiIdsForThisTour = tourPoisData.filter(tp => tp.tour_id === selectedTourId).map(tp => tp.poi_id);
-             const tourPlaces = allProcessed.filter(p => poiIdsForThisTour.includes(p.id));
-             setPlaces(tourPlaces);
-             setOrderedPlaces(sortPlacesByRoute(tourPlaces));
+            const poiIdsForThisTour = tourPoisData
+              .filter(tp => Number(tp.tour_id) === Number(selectedTourId))
+              .map(tp => Number(tp.poi_id));
+
+            const tourPlaces = allProcessed.filter(p => poiIdsForThisTour.includes(Number(p.id)));
+            setPlaces(tourPlaces);
+            setOrderedPlaces(sortPlacesByRoute(tourPlaces));
           } else {
-             const homePlaces = allProcessed.filter(p => !p.name.toLowerCase().includes("cổng"));
-             setPlaces(homePlaces);
-             setOrderedPlaces(sortPlacesByRoute(homePlaces));
+            const homePlaces = allProcessed.filter(p => !p.name.toLowerCase().includes("cổng"));
+            setPlaces(homePlaces);
+            setOrderedPlaces(sortPlacesByRoute(homePlaces));
           }
         } else {
           console.log("Storage trống, kích hoạt SQLite dự phòng...");
@@ -408,7 +453,7 @@ function App() {
             const SQL = await initSqlJs({ wasmBinary: wasmBinary });
             const dbBytes = await loadFileXHR("food_narration_poc.db");
             const db = new SQL.Database(dbBytes);
-            
+
             let offlineTours = [];
             try {
               const toursRes = db.exec("SELECT * FROM tours");
@@ -416,11 +461,11 @@ function App() {
                 const cols = toursRes[0].columns;
                 offlineTours = toursRes[0].values.map(row => {
                   let obj = {}; cols.forEach((col, idx) => { obj[col] = row[idx]; });
-                  if(!obj.color) obj.color = "#FF4757"; return obj;
+                  if (!obj.color) obj.color = "#FF4757"; return obj;
                 });
                 setTours(offlineTours);
               }
-            } catch (e) {}
+            } catch (e) { }
 
             let offlineTourPois = [];
             try {
@@ -431,7 +476,7 @@ function App() {
                   let obj = {}; cols.forEach((col, idx) => { obj[col] = row[idx]; }); return obj;
                 });
               }
-            } catch (e) {}
+            } catch (e) { }
 
             const query = `SELECT f.id, COALESCE(t.translated_name, n.name) AS name, COALESCE(t.content, f.description) AS description, n.latitude, n.longitude, i.image_url, f.price_range FROM food_places f JOIN narration_points n ON f.narration_point_id = n.id LEFT JOIN images i ON n.id = i.narration_point_id LEFT JOIN narration_translations t ON n.id = t.narration_point_id AND t.language_code = '${lang}'`;
             const res = db.exec(query);
@@ -441,19 +486,23 @@ function App() {
               const allOfflineProcessed = values.map(row => {
                 let obj = {}; columns.forEach((col, index) => { obj[col] = col === "image_url" ? cleanImageUrl(row[index]) : row[index]; }); return obj;
               });
-              
+
               setAllPlacesBackup(allOfflineProcessed);
               setDataLang(lang);
-              
+
+              // ✅ OFFLINE: Lọc ở đây để thấy biến offlineTourPois và allOfflineProcessed
               if (selectedTourId) {
-                 const poiIdsForThisTour = offlineTourPois.filter(tp => tp.tour_id === selectedTourId).map(tp => tp.poi_id);
-                 const tourPlaces = allOfflineProcessed.filter(p => poiIdsForThisTour.includes(p.id));
-                 setPlaces(tourPlaces);
-                 setOrderedPlaces(sortPlacesByRoute(tourPlaces));
+                const poiIdsForThisTour = offlineTourPois
+                  .filter(tp => Number(tp.tour_id) === Number(selectedTourId))
+                  .map(tp => Number(tp.poi_id));
+
+                const tourPlaces = allOfflineProcessed.filter(p => poiIdsForThisTour.includes(Number(p.id)));
+                setPlaces(tourPlaces);
+                setOrderedPlaces(sortPlacesByRoute(tourPlaces));
               } else {
-                 const homePlaces = allOfflineProcessed.filter(p => !p.name.toLowerCase().includes("cổng"));
-                 setPlaces(homePlaces);
-                 setOrderedPlaces(sortPlacesByRoute(homePlaces));
+                const homePlaces = allOfflineProcessed.filter(p => !p.name.toLowerCase().includes("cổng"));
+                setPlaces(homePlaces);
+                setOrderedPlaces(sortPlacesByRoute(homePlaces));
               }
             }
           } catch (dbErr) {
@@ -466,19 +515,28 @@ function App() {
   }, [lang, sortPlacesByRoute, selectedTourId]);
 
   const startTour = (tourId) => {
+    // 1. Xóa sạch danh sách đã đi cũ
+    setVisitedPlaces(new Set());
+
+    // 2. Reset về trạng thái ban đầu
+    setCurrentTourIndex(-1);
+    speakingIndexRef.current = -1;
+    isReadingRef.current = false;
+    pendingVirtualTour.current = false;
+
     setSelectedTourId(tourId);
-    setActiveTab("map"); 
-    setIsVirtualTour(false); 
-    setCurrentTourIndex(-1); 
-    speakingIndexRef.current = -1; 
+    setActiveTab("map");
+    setIsVirtualTour(false);
     setSelectedPlace(null);
-    setShowEntryModeModal(true); 
+    setShowEntryModeModal(true);
   };
 
   const exitTour = () => {
     setSelectedTourId(null);
-    setCurrentTourIndex(-1); 
+    setCurrentTourIndex(-1);
     speakingIndexRef.current = -1;
+    isReadingRef.current = false;
+    pendingVirtualTour.current = false;
     setSelectedPlace(null);
     setShowCompletionModal(false);
     if (window.AndroidBridge) window.AndroidBridge.stop();
@@ -495,43 +553,72 @@ function App() {
     setLang(newLang);
     localStorage.setItem("app_lang", newLang);
     if (activeTab === "map" && selectedTourId !== null) {
-      speakingIndexRef.current = -1; 
+      speakingIndexRef.current = -1;
       if (currentTourIndex >= orderedPlaces.length) {
         setCurrentTourIndex(0);
       }
     }
   };
 
-  // 1. CHỐNG XUNG ĐỘT TOUR ẢO (DIỆT BÓNG MA)
   useEffect(() => {
-    let isCancelled = false; 
+    // Nếu orderedPlaces vừa load xong và đang chờ bắt đầu tour ảo thì kích hoạt
+    if (pendingVirtualTour.current && orderedPlaces.length > 0) {
+      pendingVirtualTour.current = false;
+      setIsVirtualTour(true);
+      setCurrentTourIndex(0);
+      speakingIndexRef.current = -1;
+      isReadingRef.current = false;
+    }
+  }, [orderedPlaces]);
 
-    if (activeTab === "map" && isVirtualTour && currentTourIndex >= 0 && currentTourIndex < orderedPlaces.length && lang === dataLang) {
-      if (speakingIndexRef.current === currentTourIndex) return; 
-      
-      speakingIndexRef.current = currentTourIndex;
+  useEffect(() => {
+    let isCancelled = false;
+
+    // Kiểm tra: Phải ở tab Map, đang chạy Tour ảo và Tour phải có quán
+    if (activeTab === "map" && isVirtualTour && orderedPlaces.length > 0) {
+
+      // Nếu đã đọc hết danh sách thì hiện bảng thông báo kết thúc
+      if (currentTourIndex >= orderedPlaces.length) {
+        setShowCompletionModal(true);
+        return;
+      }
+
+      // Ngăn chặn việc đọc lặp đi lặp lại một quán (Chống loop)
+      if (speakingIndexRef.current === currentTourIndex) return;
+
+      // Nếu đang đọc dở thì không nhảy sang quán mới
+      if (isReadingRef.current) return;
+
       const p = orderedPlaces[currentTourIndex];
-      
-      setSelectedPlace(p); 
-      markAsVisited(p);
+      if (!p) return;
+
+      speakingIndexRef.current = currentTourIndex;
+      isReadingRef.current = true;  // khoá lại
+      setSelectedPlace(p);
+      markAsVisited(p); // Đánh dấu đã đi
 
       const prefix = lang === "vi" ? "Chúng ta đang đến " : (lang === "zh" ? "我们正在前往 " : "We are arriving at ");
-      
+
+      // BẮT ĐẦU ĐỌC
       speak(`${prefix} ${p.name}. ${p.description}`, () => {
-        if (isCancelled) return; 
-        speakTimeoutRef.current = setTimeout(() => { 
-          if (isCancelled) return; 
-          if(activeTab === "map" && isVirtualTour) {
-            setCurrentTourIndex(prev => prev + 1); 
+        // CALLBACK: Khi giọng đọc DỨT hoàn toàn thì mới chạy đoạn dưới đây
+        if (isCancelled) return;
+
+        console.log("=== ĐÃ ĐỌC XONG QUÁN:", p.name, " CHUẨN BỊ SANG QUÁN TIẾP THEO ===");
+        isReadingRef.current = false;  // mở khoá
+
+        // Chờ 1.5 giây để người dùng kịp nhìn hình ảnh rồi mới nhảy số
+        speakTimeoutRef.current = setTimeout(() => {
+          if (!isCancelled && isVirtualTour) {
+            // ĐÂY LÀ LỆNH QUAN TRỌNG NHẤT: Nhảy sang index tiếp theo
+            setCurrentTourIndex(prev => prev + 1);
           }
-        }, 800);
+        }, 1500);
       });
-    } else if (activeTab !== "map") {
-      speakingIndexRef.current = -1; 
     }
 
     return () => { isCancelled = true; };
-  }, [currentTourIndex, orderedPlaces, speak, activeTab, lang, dataLang, markAsVisited, isVirtualTour]);
+  }, [currentTourIndex, orderedPlaces, speak, activeTab, isVirtualTour, lang, markAsVisited]);
 
   useEffect(() => {
     if (activeTab !== "map") {
@@ -564,11 +651,11 @@ function App() {
           });
 
           if (closestPlace) {
-            const radius = closestPlace.activation_radius || 50; 
+            const radius = closestPlace.activation_radius || 50;
             if (minDistance <= radius && currentShopId !== closestPlace.id) {
               console.log(`🎯 ĐÃ KHÓA MỤC TIÊU: ${closestPlace.name}`);
-              setCurrentShopId(closestPlace.id); 
-              setSelectedPlace(closestPlace);    
+              setCurrentShopId(closestPlace.id);
+              setSelectedPlace(closestPlace);
               speakGPS(closestPlace.name, closestPlace.description);
             }
           }
@@ -591,12 +678,12 @@ function App() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: parseInt(userId), narration_point_id: placeId })
     }).then(() => setFavoriteIds(prev => prev.includes(placeId) ? prev.filter(id => id !== placeId) : [...prev, placeId]))
-      .catch(() => alert("Cần có mạng để lưu yêu thích!")); 
+      .catch(() => alert("Cần có mạng để lưu yêu thích!"));
   };
 
   return (
     <div style={{ width: "100vw", height: "100vh", backgroundColor: "#F4F7FB", position: "relative", overflow: "hidden", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
-      
+
       <div style={{ height: "calc(100vh - 75px)", overflowY: "auto", overflowX: "hidden" }}>
 
         {/* --- TAB HOME --- */}
@@ -604,10 +691,10 @@ function App() {
           <div style={{ padding: "30px 20px", minHeight: "100%", background: "linear-gradient(180deg, #FFFFFF 0%, #F4F7FB 100%)" }}>
             <h2 style={{ fontSize: "32px", color: "#1A1A1A", fontWeight: "900", letterSpacing: "-0.5px", margin: "0 0 5px 0" }}>Vĩnh Khánh</h2>
             <h2 style={{ fontSize: "32px", color: "#FF4757", fontWeight: "900", letterSpacing: "-0.5px", margin: "0 0 25px 0" }}>Street Food</h2>
-            
+
             <div style={{ display: "flex", gap: "10px", marginBottom: "35px" }}>
               {["vi", "en", "zh"].map(l => (
-                <button key={l} 
+                <button key={l}
                   onClick={() => handleChangeLanguage(l)}
                   style={{ border: "none", padding: "10px 24px", borderRadius: "25px", backgroundColor: lang === l ? "#FF4757" : "#FFFFFF", color: lang === l ? "white" : "#6B7280", fontWeight: "700", fontSize: "14px", textTransform: "uppercase", boxShadow: lang === l ? "0 8px 16px rgba(255, 71, 87, 0.3)" : "0 2px 8px rgba(0,0,0,0.05)", transition: "all 0.3s ease", cursor: "pointer" }}>
                   {l}
@@ -626,15 +713,41 @@ function App() {
               ))}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", marginTop: "10px" }}><h3 style={{ fontSize: "20px", fontWeight: "800", color: "#2D3436", margin: 0 }}>{t.mustTry}</h3></div>
+            {/* --- TIÊU ĐỀ "MÓN PHẢI THỬ" --- */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px", marginTop: "10px" }}>
+              <h3 style={{ fontSize: "20px", fontWeight: "800", color: "#2D3436", margin: 0 }}>{t.mustTry}</h3>
+            </div>
+
+            {/* --- DANH SÁCH MÓN ĂN QUẸT NGANG --- */}
             <div style={{ display: "flex", gap: "20px", overflowX: "auto", paddingBottom: "25px", scrollbarWidth: "none", marginLeft: "-20px", paddingLeft: "20px", marginRight: "-20px", paddingRight: "20px" }}>
               {allPlacesBackup.filter(p => !p.name.toLowerCase().includes("cổng")).map(p => (
                 <div key={p.id} onClick={() => { setSelectedPlace(p); markAsVisited(p); speak(`${p.name}. ${p.description}`); }} style={{ minWidth: "280px", height: "360px", borderRadius: "28px", boxShadow: "0 15px 35px rgba(0,0,0,0.1)", overflow: "hidden", position: "relative", flexShrink: 0, cursor: "pointer", backgroundColor: "#fff" }}>
                   <img src={p.image_url} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", top: 0, left: 0 }} />
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "70%", background: "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0) 100%)" }}></div>
-                  <div onClick={(e) => { e.stopPropagation(); handleToggleFavorite(p.id); }} style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, fontSize: "18px", backgroundColor: "rgba(255,255,255,0.3)", borderRadius: "50%", width: "45px", height: "45px", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.4)" }}>{favoriteIds.includes(p.id) ? "❤️" : "🤍"}</div>
-                  <div style={{ position: "absolute", bottom: "25px", left: "25px", right: "25px", zIndex: 10 }}><p style={{ margin: 0, fontWeight: "900", color: "#FFFFFF", fontSize: "24px", textShadow: "0 2px 8px rgba(0,0,0,0.5)", lineHeight: "1.2" }}>{p.name}</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "15px" }}><span style={{ backgroundColor: "#FF4757", color: "white", padding: "6px 12px", borderRadius: "12px", fontSize: "14px", fontWeight: "800", boxShadow: "0 4px 10px rgba(255,71,87,0.4)" }}>{p.price_range}</span><span style={{ color: "#FFD700", fontSize: "14px", fontWeight: "800", backgroundColor: "rgba(0,0,0,0.4)", padding: "6px 10px", borderRadius: "12px", backdropFilter: "blur(4px)" }}>★ 4.8</span></div>
+
+                  {/* 🟢🔴 MÁC TRẠNG THÁI (MỞ/ĐÓNG) NẰM Ở GÓC TRÊN BÊN TRÁI */}
+                  <div style={{ position: "absolute", top: "20px", left: "20px", zIndex: 10 }}>
+                    <span style={{
+                      backgroundColor: p.is_active ? "rgba(46, 213, 115, 0.9)" : "rgba(255, 71, 87, 0.9)",
+                      color: "white", padding: "6px 12px", borderRadius: "12px", fontSize: "12px", fontWeight: "900",
+                      backdropFilter: "blur(5px)", boxShadow: "0 4px 10px rgba(0,0,0,0.2)"
+                    }}>
+                      {p.is_active ? t.isOpen : t.isClosed}
+                    </span>
+                  </div>
+
+                  {/* THẢ TIM Ở GÓC TRÊN BÊN PHẢI */}
+                  <div onClick={(e) => { e.stopPropagation(); handleToggleFavorite(p.id); }} style={{ position: "absolute", top: "20px", right: "20px", zIndex: 10, fontSize: "18px", backgroundColor: "rgba(255,255,255,0.3)", borderRadius: "50%", width: "45px", height: "45px", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.4)" }}>
+                    {favoriteIds.includes(p.id) ? "❤️" : "🤍"}
+                  </div>
+
+                  {/* TÊN, GIÁ TIỀN VÀ RATING Ở DƯỚI CÙNG */}
+                  <div style={{ position: "absolute", bottom: "25px", left: "25px", right: "25px", zIndex: 10 }}>
+                    <p style={{ margin: 0, fontWeight: "900", color: "#FFFFFF", fontSize: "24px", textShadow: "0 2px 8px rgba(0,0,0,0.5)", lineHeight: "1.2" }}>{p.name}</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "15px" }}>
+                      <span style={{ backgroundColor: "#FF4757", color: "white", padding: "6px 12px", borderRadius: "12px", fontSize: "14px", fontWeight: "800", boxShadow: "0 4px 10px rgba(255,71,87,0.4)" }}>{p.price_range}</span>
+                      <span style={{ color: "#FFD700", fontSize: "14px", fontWeight: "800", backgroundColor: "rgba(0,0,0,0.4)", padding: "6px 10px", borderRadius: "12px", backdropFilter: "blur(4px)" }}>★ 4.8</span>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -648,15 +761,15 @@ function App() {
             <MapContainer center={[10.7619, 106.7020]} zoom={17} style={{ height: "100%", width: "100%", zIndex: 1 }} zoomControl={false}>
               <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
               {orderedPlaces.map((p) => (
-                <Marker key={p.id} position={[p.latitude, p.longitude]} 
+                <Marker key={p.id} position={[p.latitude, p.longitude]}
                   icon={L.divIcon({
-                    className: 'transparent-leaflet-icon', 
-                    html: selectedPlace?.id === p.id 
+                    className: 'transparent-leaflet-icon',
+                    html: selectedPlace?.id === p.id
                       ? `<div class="modern-active-marker"><div class="modern-active-marker-core"></div></div>`
                       : `<div class="normal-marker"></div>`,
                     iconSize: [30, 30], iconAnchor: [15, 15]
                   })}
-                  eventHandlers={{ click: () => { setSelectedPlace(p); markAsVisited(p); speak(`${p.name}. ${p.description}`); } }} 
+                  eventHandlers={{ click: () => { setSelectedPlace(p); markAsVisited(p); speak(`${p.name}. ${p.description}`); } }}
                 />
               ))}
               {userLocation && (
@@ -681,7 +794,7 @@ function App() {
                   <img src={selectedPlace.image_url} alt={selectedPlace.name} style={{ width: "100%", height: "160px", objectFit: "cover", borderRadius: "20px", marginBottom: "15px" }} />
                   <h3 style={{ margin: 0, fontSize: "22px", color: "#1A1A1A", fontWeight: "900" }}>{selectedPlace.name}</h3>
                   <p style={{ margin: "8px 0 12px 0", color: "#FF4757", fontWeight: "800" }}>{selectedPlace.price_range}</p>
-                  <p style={{ margin: "0", color: "#636E72", fontSize: "14px", lineHeight: "1.5" }}>{selectedPlace.description}</p> 
+                  <p style={{ margin: "0", color: "#636E72", fontSize: "14px", lineHeight: "1.5" }}>{selectedPlace.description}</p>
                 </div>
               </div>
             )}
@@ -727,7 +840,7 @@ function App() {
             </div>
             <h3 style={{ fontSize: "20px", fontWeight: "800", color: "#1A1A1A", marginBottom: "15px" }}>{t.proListTitle}</h3>
             {visitedPlaces.size === 0 ? (
-              <div style={{ backgroundColor: "white", padding: "30px 20px", borderRadius: "20px", textAlign: "center", boxShadow: "0 4px 15px rgba(0,0,0,0.03)", marginBottom: "30px" }}><p style={{ fontSize: "40px", margin: "0 0 10px 0" }}>👟</p><p style={{ color: "#636E72", fontWeight: "600", margin: 0, fontSize: "14px", lineHeight: "1.5" }}>{t.proEmpty1}<br/>{t.proEmpty2}</p></div>
+              <div style={{ backgroundColor: "white", padding: "30px 20px", borderRadius: "20px", textAlign: "center", boxShadow: "0 4px 15px rgba(0,0,0,0.03)", marginBottom: "30px" }}><p style={{ fontSize: "40px", margin: "0 0 10px 0" }}>👟</p><p style={{ color: "#636E72", fontWeight: "600", margin: 0, fontSize: "14px", lineHeight: "1.5" }}>{t.proEmpty1}<br />{t.proEmpty2}</p></div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "15px", marginBottom: "30px" }}>
                 {allPlacesBackup.filter(p => visitedPlaces.has(p.id)).map(p => (
@@ -743,58 +856,65 @@ function App() {
       </div>
 
       {/* --- BẢNG THÔNG BÁO HOÀN THÀNH TOUR --- */}
-        {showCompletionModal && (
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(5px)" }}>
-            <div style={{ backgroundColor: "white", padding: "35px 25px", borderRadius: "28px", width: "80%", maxWidth: "340px", textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.25)", animation: "slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)" }}>
-              
-              <div style={{ fontSize: "65px", marginBottom: "15px", filter: "drop-shadow(0 10px 10px rgba(0,0,0,0.1))" }}>🏆</div>
-              <h3 style={{ fontSize: "24px", fontWeight: "900", color: "#1A1A1A", margin: "0 0 10px 0", letterSpacing: "-0.5px" }}>{t.tourEnded}</h3>
-              <p style={{ fontSize: "15px", color: "#636E72", marginBottom: "30px", lineHeight: "1.5", fontWeight: "500" }}>{t.tourCompleteDesc}</p>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <button onClick={() => { setShowCompletionModal(false); setCurrentTourIndex(0); speakingIndexRef.current = -1; }} style={{ backgroundColor: "#4285F4", color: "white", border: "none", padding: "16px", borderRadius: "18px", fontWeight: "800", fontSize: "16px", cursor: "pointer", boxShadow: "0 8px 20px rgba(66, 133, 244, 0.3)", transition: "0.2s" }}>
-                  {t.btnReplay}
-                </button>
-                <button onClick={() => { setShowCompletionModal(false); exitTour(); setActiveTab("home"); }} style={{ backgroundColor: "#F4F7FB", color: "#2D3436", border: "none", padding: "16px", borderRadius: "18px", fontWeight: "800", fontSize: "16px", cursor: "pointer", transition: "0.2s" }}>
-                  {t.btnGoHome}
-                </button>
-              </div>
+      {showCompletionModal && (
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 10001, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(5px)" }}>
+          <div style={{ backgroundColor: "white", padding: "35px 25px", borderRadius: "28px", width: "80%", maxWidth: "340px", textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.25)", animation: "slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)" }}>
+
+            <div style={{ fontSize: "65px", marginBottom: "15px", filter: "drop-shadow(0 10px 10px rgba(0,0,0,0.1))" }}>🏆</div>
+            <h3 style={{ fontSize: "24px", fontWeight: "900", color: "#1A1A1A", margin: "0 0 10px 0", letterSpacing: "-0.5px" }}>{t.tourEnded}</h3>
+            <p style={{ fontSize: "15px", color: "#636E72", marginBottom: "30px", lineHeight: "1.5", fontWeight: "500" }}>{t.tourCompleteDesc}</p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <button onClick={() => { setShowCompletionModal(false); setCurrentTourIndex(0); speakingIndexRef.current = -1; }} style={{ backgroundColor: "#4285F4", color: "white", border: "none", padding: "16px", borderRadius: "18px", fontWeight: "800", fontSize: "16px", cursor: "pointer", boxShadow: "0 8px 20px rgba(66, 133, 244, 0.3)", transition: "0.2s" }}>
+                {t.btnReplay}
+              </button>
+              <button onClick={() => { setShowCompletionModal(false); exitTour(); setActiveTab("home"); }} style={{ backgroundColor: "#F4F7FB", color: "#2D3436", border: "none", padding: "16px", borderRadius: "18px", fontWeight: "800", fontSize: "16px", cursor: "pointer", transition: "0.2s" }}>
+                {t.btnGoHome}
+              </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
       {/* --- BẢNG CHỌN CHẾ ĐỘ KHI VÀO MAP --- */}
       {showEntryModeModal && (
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.7)", zIndex: 20000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(10px)" }}>
           <div style={{ backgroundColor: "white", padding: "30px", borderRadius: "28px", width: "85%", maxWidth: "350px", textAlign: "center", boxShadow: "0 20px 50px rgba(0,0,0,0.3)" }}>
             <div style={{ fontSize: "50px", marginBottom: "10px" }}>🧭</div>
-            <h3 style={{ fontSize: "22px", fontWeight: "900", margin: "0 0 10px 0" }}>Chọn chế độ khám phá</h3>
-            <p style={{ fontSize: "14px", color: "#636E72", margin: "0 0 25px 0" }}>Bạn muốn tự động xem lộ trình hay sử dụng định vị GPS thực tế?</p>
-            
+            <h3 style={{ fontSize: "22px", fontWeight: "900", margin: "0 0 10px 0" }}>{t.modalEntryTitle}</h3>
+            <p style={{ fontSize: "14px", color: "#636E72", margin: "0 0 25px 0" }}>{t.modalEntryDesc}</p>
+
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {/* NÚT CHỌN TOUR ẢO */}
-              <button onClick={() => { 
-                setIsVirtualTour(true); 
-                setCurrentTourIndex(0); 
-                setShowEntryModeModal(false); 
+              <button onClick={() => {
+                setShowEntryModeModal(false);
+                isReadingRef.current = false;
+                speakingIndexRef.current = -1;
+                if (orderedPlaces.length > 0) {
+                  // Data đã load sẵn → chạy ngay
+                  setIsVirtualTour(true);
+                  setCurrentTourIndex(0);
+                } else {
+                  // Data chưa load xong → dùng cờ, đợi orderedPlaces có dữ liệu
+                  pendingVirtualTour.current = true;
+                }
               }} style={{ backgroundColor: "#4285F4", color: "white", border: "none", padding: "15px", borderRadius: "15px", fontWeight: "800", cursor: "pointer" }}>
-                🔄 Chạy Tour ảo tự động
+                {t.btnVirtualTour}
               </button>
 
               {/* NÚT CHỌN GPS THẬT */}
-              <button onClick={() => { 
-                // Tẩy não thêm lần nữa cho chắc cốp
-                setIsVirtualTour(false); 
-                setCurrentTourIndex(-1); 
+              <button onClick={() => {
+                setIsVirtualTour(false);
+                setCurrentTourIndex(-1);
                 speakingIndexRef.current = -1;
                 setSelectedPlace(null);
-                setCurrentShopId(null); 
+                setCurrentShopId(null);
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
-                
-                setShowEntryModeModal(false); 
-                alert("Chế độ GPS đã bật! Hãy di chuyển hoặc dùng Fake GPS.");
+
+                setShowEntryModeModal(false);
+                alert(t.alertGPSOn);
               }} style={{ backgroundColor: "#00E5FF", color: "#1A1A1A", border: "none", padding: "15px", borderRadius: "15px", fontWeight: "800", cursor: "pointer" }}>
-                📍 Sử dụng GPS thực tế
+                {t.btnRealGPS}
               </button>
             </div>
           </div>
@@ -805,22 +925,22 @@ function App() {
       <div style={{ position: "absolute", bottom: 0, width: "100%", height: "75px", backgroundColor: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(15px)", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-around", alignItems: "center", zIndex: 1000, paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div onClick={() => setActiveTab("home")} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: activeTab === "home" ? "#FF4757" : "#B2BEC3", cursor: "pointer", transition: "0.2s" }}><span style={{ fontSize: "22px" }}>🏠</span><span style={{ fontSize: "11px", fontWeight: "800" }}>{t.navHome}</span></div>
         <div onClick={() => setActiveTab("favorites")} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: activeTab === "favorites" ? "#FF4757" : "#B2BEC3", cursor: "pointer", transition: "0.2s" }}><span style={{ fontSize: "22px" }}>❤️</span><span style={{ fontSize: "11px", fontWeight: "800" }}>{t.navFav}</span></div>
-        
+
         {/* 3. NÚT MAP: TẨY TRẮNG MỌI DỮ LIỆU CŨ */}
-        <div 
-          onClick={() => { 
-            setActiveTab("map"); 
+        <div
+          onClick={() => {
+            setActiveTab("map");
             if (window.speechSynthesis) window.speechSynthesis.cancel();
             if (window.AndroidBridge) window.AndroidBridge.stop();
             if (window.tourAudio) { window.tourAudio.pause(); window.tourAudio.src = ""; }
             if (speakTimeoutRef.current) { clearTimeout(speakTimeoutRef.current); speakTimeoutRef.current = null; }
-            setIsVirtualTour(false); 
-            setCurrentTourIndex(-1); 
-            speakingIndexRef.current = -1; 
-            setSelectedPlace(null);  
-            setCurrentShopId(null);  
-            setShowEntryModeModal(true); 
-          }} 
+            setIsVirtualTour(false);
+            setCurrentTourIndex(-1);
+            speakingIndexRef.current = -1;
+            setSelectedPlace(null);
+            setCurrentShopId(null);
+            setShowEntryModeModal(true);
+          }}
           style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", color: activeTab === "map" ? "#4285F4" : "#B2BEC3", cursor: "pointer", transition: "0.2s" }}
         >
           <div style={{ backgroundColor: activeTab === "map" ? "#E8F0FE" : "transparent", padding: "4px 15px", borderRadius: "15px", display: "flex", flexDirection: "column", alignItems: "center" }}>
