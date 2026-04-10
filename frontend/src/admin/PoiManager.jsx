@@ -262,7 +262,7 @@ const isPoiActive = poi.isActive === true || poi.is_active === true;
 
         <div className="poi-table">
           <div className="poi-row poi-header-row">
-            <div className="poi-col poi-col-id">ID</div>
+            <div className="poi-col poi-col-id ">ID</div>
             <div className="poi-col poi-col-name">Tên</div>
             <div className="poi-col poi-col-coord">Tọa độ</div>
             <div className="poi-col poi-col-radius">Bán kính</div>      
@@ -276,35 +276,52 @@ const isPoiActive = poi.isActive === true || poi.is_active === true;
 const isPoiActive = poi.isActive === true || poi.is_active === true;
             return (
               <div className="poi-row" key={poi.id}>
-                <div className="poi-col poi-col-id">{poi.id}</div>
-                <div className="poi-col poi-col-name">{poi.name}</div>
-                <div className="poi-col poi-col-coord">
-                  {poi.latitude && poi.longitude 
-                    ? `${Number(poi.latitude).toFixed(4)}, ${Number(poi.longitude).toFixed(4)}` 
-                    : "Chưa có tọa độ"}
-                </div>
-                <div className="poi-col poi-col-radius">
-                  {poi.activationRadius ?? "N/A"}
-                </div>
-                <div className="poi-col poi-col-priority">{poi.priority}</div>
-                
-                {/* ĐÃ SỬA: Hiển thị trạng thái trong bảng (Open/Closed) */}
-                <div className="poi-col poi-col-status">
-                  { isPoiActive
-                    ? <span style={{ padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", backgroundColor: '#e8f5e9', color: '#2e7d32' }}>Open</span>
-                    : <span style={{ padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", backgroundColor: '#e8eaf6', color: '#3f51b5' }}>Closed</span> }
-                </div>
+  <div className="poi-col poi-col-id" data-label="ID">
+    <span>{poi.id}</span>
+  </div>
 
-                
+  <div className="poi-col poi-col-name" data-label="Tên">
+    <span>{poi.name}</span>
+  </div>
 
-                <div className="poi-col poi-col-image">
-                  {poi.imageWeb ? (
-                    <img src={`http://localhost:5050${poi.imageWeb}`} alt="POI" style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "4px" }} />
-                  ) : (
-                    "Không có ảnh"
-                  )}
-                </div>
-                <div className="poi-col poi-col-action">
+  <div className="poi-col poi-col-coord" data-label="Tọa độ">
+    <span>
+      {poi.latitude && poi.longitude 
+        ? `${Number(poi.latitude).toFixed(4)}, ${Number(poi.longitude).toFixed(4)}` 
+        : "Chưa có tọa độ"}
+    </span>
+  </div>
+
+  <div className="poi-col poi-col-radius" data-label="Bán kính">
+    <span>{poi.activationRadius ?? "N/A"}</span>
+  </div>
+
+  <div className="poi-col poi-col-priority" data-label="Ưu tiên">
+    <span>{poi.priority}</span>
+  </div>
+
+  {/* STATUS GIỮ NGUYÊN */}
+  <div className="poi-col poi-col-status" data-label="Trạng thái">
+    { isPoiActive
+      ? <span style={{ padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", backgroundColor: '#e8f5e9', color: '#2e7d32' }}>Open</span>
+      : <span style={{ padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", backgroundColor: '#e8eaf6', color: '#3f51b5' }}>Closed</span> }
+  </div>
+
+  <div className="poi-col poi-col-image" data-label="Ảnh">
+    <span>
+      {poi.imageWeb ? (
+        <img 
+          src={`http://localhost:5050${poi.imageWeb}`} 
+          alt="POI" 
+          style={{ width: "50px", height: "50px", objectFit: "cover", borderRadius: "4px" }} 
+        />
+      ) : (
+        "Không có ảnh"
+      )}
+    </span>
+  </div>
+
+  <div className="poi-col poi-col-action" data-label="Thao tác">
                   <button 
                     className="icon-btn view-btn"
                     onClick={() => setSelectedPoi(poi)}

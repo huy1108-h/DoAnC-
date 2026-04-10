@@ -349,7 +349,7 @@ function TranslationTab({ token }) {
                   onClick={handleSave}
                   disabled={saving}
                 >
-                  {saving ? "Đang lưu..." : <i className="fa-solid fa-floppy-disk" />}
+                  {saving ? "" : <i className="fa-solid fa-floppy-disk" />}
                 </button>
               </div>
             </div>

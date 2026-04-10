@@ -56,17 +56,16 @@
 
 .poi-header-row {
   display: grid;
-   display: grid;
   grid-template-columns: 
     60px      /* ID */
-    350px     /* Tên - Chiếm không gian lớn */
+    350px     /* Tên */
     250px     /* Tọa độ */
     150px     /* Bán kính */
     150px     /* Ưu tiên */
     150px     /* Trạng thái */
     150px     /* Ảnh */
-    150px;    /* Thao tác */
-  padding: 16px 20px;
+    170px;    /* Thao tác */
+  padding: 16px 20px 16px 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 8px;
   font-weight: 600;
@@ -81,16 +80,15 @@
 
 .poi-row {
   display: grid;
- display: grid;
   grid-template-columns: 
     60px      /* ID */
-    350px     /* Tên - Chiếm không gian lớn */
+    350px     /* Tên */
     250px     /* Tọa độ */
     150px     /* Bán kính */
     150px     /* Ưu tiên */
     150px     /* Trạng thái */
     150px     /* Ảnh */
-    150px;    /* Thao tác */
+    170px;    /* Thao tác */
   padding: 16px 20px;
   background: white;
   border-radius: 8px;
@@ -110,7 +108,8 @@
   display: flex;
   align-items: center;
   padding: 0 8px;
-  width: 100%; 
+  overflow: hidden;
+  min-width: 0;
 }
 .poi-col-id,
 .poi-col-name,
@@ -358,44 +357,122 @@
   padding:0 24px 24px;
   justify-content:flex-end;
 }
-
+.poi-col span {
+  font-weight: 500;
+  color: #1e293b;
+}
+.poi-col-image span {
+  flex: unset;        /* không cho giãn */
+  text-align: right;
+    justify-content: space-between;
+}
+.poi-col-image img:hover{
+  transform: scale(1.2);
+}
 /* RESPONSIVE */
-
+@media (max-width:768px){
+  .poi-col-image img{
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+}
 @media (max-width:1200px){
   .poi-header-row,
   .poi-row{
     grid-template-columns: 
-      60px 1fr 1fr 100px 80px 100px 100px;
+      50px 
+      200px 
+      180px 
+      80px 
+      80px 
+      100px 
+      100px 
+      130px;
   }
 }
 @media (max-width:768px){
 
+  /* Header stack lại */
   .poi-header{
     flex-direction:column;
     gap:16px;
     align-items:flex-start;
   }
 
-  .poi-header-row,
+  /* ❌ Ẩn header table */
+  .poi-header-row{
+    display:none;
+  }
+
+  /* ✅ Row thành card */
   .poi-row{
     grid-template-columns:1fr;
-    gap:8px;
+    gap:10px;
+    padding:16px;
+    border-radius:12px;
   }
 
+  /* mỗi field thành dòng riêng */
   .poi-col{
-    border-bottom:1px solid #eee;
-    padding:8px 0;
-    width: 100%;
+  display:flex;
+  align-items:center;
+  padding:10px 0;
+  border-bottom:1px solid #eee;
+}
+
+  .poi-col:last-child{
+    border-bottom:none;
   }
 
+  /* label giả */
+ .poi-col::before{
+  content: attr(data-label);
+  font-size:12px;
+  font-weight:600;
+  color:#64748b;
+  text-transform:uppercase;
+
+  width: 110px;      /* 🔥 QUAN TRỌNG */
+  min-width: 110px;  /* giữ cố định */
+}
+.poi-col > *:not(:first-child){
+  margin-left:auto;
+  text-align:right;
+}
+  .poi-col span{
+    flex: 1;
+    text-align:right;
+    word-break: break-word;
+  }
+  /* action xuống dưới */
   .poi-col-action{
     justify-content:flex-start;
+    gap:10px;
   }
 
+  /* form */
   .form-row{
     grid-template-columns:1fr;
   }
+}
+.poi-container{
+  overflow-x:hidden;
+}
+@media (max-width:768px){
+  .poi-modal-box{
+    width:95%;
+    max-height:90vh;
+  }
 
+  .poi-modal-header{
+    padding:16px;
+  }
+
+  .poi-modal-content{
+    padding:16px;
+  }
 }
 .close-btn{
   width:36px;

@@ -194,3 +194,70 @@
   color: #94a3b8;
   flex-shrink: 0;
 }
+/* =========================
+   RESPONSIVE BỔ SUNG
+========================= */
+
+/* Tablet & Mobile */
+@media (max-width: 1024px) {
+  .timeline-info {
+    grid-template-columns: repeat(2, 1fr); /* Chuyển thành 2 hàng 2 cột */
+    gap: 8px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .history-container {
+    padding: 15px;
+  }
+
+  .timeline-item {
+    flex-direction: column; /* Xếp chồng theo chiều dọc */
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    padding-bottom: 35px; /* Chừa chỗ cho thời gian ở góc */
+  }
+
+  .timeline-event-badge {
+    align-self: flex-start;
+  }
+
+  .timeline-info {
+    width: 100%;
+    grid-template-columns: 1fr 1fr; /* Vẫn giữ 2 cột để tiết kiệm diện tích */
+    border-top: 1px solid #f1f5f9;
+    padding-top: 10px;
+  }
+
+  .timeline-info span {
+    font-size: 12px;
+    display: flex;
+    flex-direction: column; /* Nhãn trên, giá trị dưới */
+  }
+
+  .timeline-time {
+    position: absolute;
+    bottom: 12px;
+    right: 18px;
+    font-size: 11px;
+  }
+
+  /* Stats Card cũng cần Responsive */
+  .history-stats {
+    grid-template-columns: 1fr; /* Một cột duy nhất trên mobile */
+  }
+}
+
+/* Mobile nhỏ (iPhone SE, etc.) */
+@media (max-width: 480px) {
+  .timeline-info {
+    grid-template-columns: 1fr; /* Một cột duy nhất cho thông tin */
+    gap: 6px;
+  }
+  
+  .history-header {
+    font-size: 18px;
+  }
+}

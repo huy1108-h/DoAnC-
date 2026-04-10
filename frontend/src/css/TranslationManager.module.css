@@ -362,13 +362,273 @@
   background-color: #fcfcfc;
 }
 
-/* Responsive cho màn hình nhỏ */
+/* =========================
+   RESPONSIVE FIX
+========================= */
+
+/* Tablet */
+@media (max-width: 1024px){
+
+  .translation-container{
+    padding:20px;
+  }
+
+  .translation-header{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+    font-size:22px;
+  }
+
+  .translation-toolbar{
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .search-box{
+    width:100%;
+  }
+
+  .add-btn{
+    width:100%;
+  }
+
+  .table-wrapper{
+    overflow-x:auto;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px){
+
+  /* HEADER */
+  .translation-header{
+    font-size:20px;
+    padding:18px;
+  }
+
+  /* TOOLBAR */
+  .translation-toolbar{
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .search-box{
+    width:100%;
+  }
+
+  .add-btn{
+    width:100%;
+  }
+
+  /* TABLE -> CARD */
+  .translation-table thead{
+    display:none;
+  }
+
+  .translation-table,
+  .translation-table tbody,
+  .translation-table tr,
+  .translation-table td{
+    display:block;
+    width:100%;
+  }
+
+  .translation-table tr{
+    background:white;
+    margin-bottom:15px;
+    border-radius:12px;
+    padding:12px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  .translation-table td{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 0;
+    border:none;
+    border-bottom:1px solid #eee;
+    gap:10px;
+  }
+
+  .translation-table td:last-child{
+    border-bottom:none;
+  }
+
+  /* label giả */
+  .translation-table td::before{
+    content: attr(data-label);
+    font-size:11px;
+    font-weight:600;
+    color:#64748b;
+    text-transform:uppercase;
+
+    width:110px;
+    min-width:110px;
+  }
+
+  /* text phải */
+  .translation-table td > *{
+    margin-left:auto;
+    text-align:right;
+    word-break:break-word;
+  }
+
+  /* ACTION BUTTON */
+  .action-group{
+    justify-content:flex-start;
+  }
+
+  /* MODAL */
+  .modal-box{
+    width:95%;
+    max-height:90vh;
+  }
+
+  .modal-content{
+    padding:18px;
+  }
+
+  .modal-actions{
+    padding:15px;
+    flex-direction:column;
+  }
+
+  .save-btn{
+    width:100%;
+  }
+}
+
+/* Mobile nhỏ */
+@media (max-width: 768px) {
+  .translation-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .translation-table thead {
+    display: none; /* Ẩn tiêu đề bảng */
+  }
+
+  .translation-table tr {
+    display: block;
+    margin-bottom: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+  }
+
+  .translation-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Để text dài xuống dòng đẹp hơn */
+    padding: 10px 5px;
+    border-bottom: 1px dashed #edf2f7;
+    text-align: right;
+  }
+
+  .translation-table td:last-child {
+    border-bottom: none;
+  }
+
+  /* Hiện nhãn từ data-label */
+  .translation-table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #64748b;
+    font-size: 12px;
+    text-transform: uppercase;
+    text-align: left;
+    min-width: 100px;
+    margin-right: 10px;
+  }
+
+  /* Reset lại hiển thị cho phần mô tả dài trên mobile */
+  .desc {
+    max-width: unset;
+    white-space: normal;
+    word-break: break-word;
+    text-align: right;
+  }
+  
+  .action-group {
+    justify-content: flex-end;
+    width: 100%;
+  }
+  .pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 25px;
+  padding: 15px 0;
+  flex-wrap: wrap; /* Cho phép rớt dòng nếu quá nhiều số trang trên mobile */
+}
+
+.pagination button {
+  padding: 8px 14px;
+  border: 1px solid #e0e0e0;
+  background-color: white;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.pagination button:hover:not(:disabled) {
+  border-color: #667eea;
+  color: #667eea;
+  background-color: #f5f7ff;
+  transform: translateY(-1px);
+}
+
+.pagination button.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.pagination button:disabled {
+  background-color: #f1f5f9;
+  color: #cbd5e1;
+  cursor: not-allowed;
+  border-color: #e2e8f0;
+}
+
+/* Tối ưu riêng cho Mobile */
 @media (max-width: 480px) {
   .pagination {
-    gap: 4px;
+    gap: 5px;
   }
+
   .pagination button {
     padding: 6px 10px;
-    font-size: 12px;
+    font-size: 13px;
+    min-width: 32px;
+    border-radius: 6px;
   }
+
+  /* Ẩn bớt chữ "Trước/Sau" nếu muốn gọn, chỉ để icon hoặc rút gọn */
+  .pagination button:first-child,
+  .pagination button:last-child {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}
+}
+
+@keyframes popup {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }

@@ -600,7 +600,13 @@ const handleUpdate = async () => {
   return (
     <div className="seller-container">
       {/* SIDEBAR */}
-      <aside className={`seller-sidebar ${!sidebarOpen ? "seller-hidden" : ""}`}>
+      {sidebarOpen && (
+      <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
+    )}
+      <aside className={`seller-sidebar ${sidebarOpen ? "seller-open" : "seller-hidden"}`}>
+        <button className="mobile-close-btn" onClick={() => setSidebarOpen(false)}>
+    <i className="fa-solid fa-xmark"></i>
+  </button>
         <div className="seller-logo">
           <div className="seller-logo-icon"><Store size={20} /></div>
           <div>
@@ -627,6 +633,7 @@ const handleUpdate = async () => {
       {/* MAIN CONTENT */}
       <div className={`seller-main ${!sidebarOpen ? "seller-full" : ""}`}>
         <header className="seller-header">
+          
             <button className="seller-action-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu size={18} />
             </button>

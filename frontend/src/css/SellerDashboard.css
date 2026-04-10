@@ -423,3 +423,185 @@
   background: #4338ca;
   transform: translateY(-1px);
 }
+/* =========================
+   RESPONSIVE BỔ SUNG
+========================= */
+
+/* Tablet (Dưới 1024px) */
+@media (max-width: 1024px) {
+  .seller-sidebar {
+    width: 80px; /* Thu nhỏ sidebar chỉ để lại icon */
+    padding: 24px 8px;
+  }
+
+  .seller-logo-title, 
+  .seller-logo-subtitle, 
+  .seller-nav-section, 
+  .seller-nav-button span {
+    display: none; /* Ẩn chữ, chỉ hiện icon */
+  }
+
+  .seller-nav-button {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .seller-main {
+    margin-left: 80px; /* Đẩy main vào ít hơn */
+  }
+
+  .seller-table-header, .seller-table-row {
+    grid-template-columns: 60px 1.5fr 1fr 1fr 80px; /* Bớt cột hoặc thu nhỏ */
+    font-size: 13px;
+  }
+}
+
+/* Mobile (Dưới 768px) */
+@media (max-width: 768px) {
+  .seller-sidebar {
+    transform: translateX(-100%); /* Ẩn hẳn sidebar vào lề trái */
+    width: 240px;
+  }
+
+  /* Khi sidebar có class active (bạn cần thêm JS để toggle class này) */
+  .seller-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .seller-main {
+    margin-left: 0; /* Main chiếm toàn màn hình */
+  }
+
+  .seller-header {
+    justify-content: space-between; /* Để dành chỗ cho nút Menu bên trái */
+    padding: 10px 16px;
+  }
+
+  .seller-page {
+    padding: 16px;
+  }
+
+  /* Chuyển TABLE thành dạng CARD để dễ nhìn */
+  .seller-table-header {
+    display: none; /* Ẩn tiêu đề bảng */
+  }
+
+  .seller-table-row {
+    display: flex;
+    flex-direction: column; /* Xếp chồng nội dung */
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .seller-col-content {
+    width: 100%;
+  }
+
+  /* Bộ lọc (Search & Select) xếp dọc */
+  .seller-filter {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .seller-search-box {
+    width: 100%;
+  }
+
+  /* Modal 2 cột thành 1 cột */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .seller-modal {
+    padding: 20px;
+    width: 95%;
+  }
+}
+
+/* Mobile nhỏ (Dưới 480px) */
+@media (max-width: 480px) {
+  .seller-title {
+    font-size: 20px;
+  }
+  
+  .seller-user-info span {
+    display: none; /* Ẩn tên user, chỉ để avatar trên header */
+  }
+
+  .seller-modal-actions {
+    flex-direction: column; /* Nút Lưu/Hủy xếp chồng */
+  }
+
+  .seller-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+.mobile-close-btn {
+  display: none;
+}
+@media (max-width: 768px) {
+  .mobile-close-btn {
+    display: flex; /* Hiện trên mobile */
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 20px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .mobile-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .seller-logo {
+    margin-top: 10px;
+  }
+  /* 1. Sidebar phải nằm ĐÈ lên trên cùng */
+  .seller-sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important; /* Độ rộng cố định khi mở */
+    z-index: 9999 !important;
+    transform: translateX(-100%); /* Mặc định ẩn */
+    transition: transform 0.3s ease !important;
+    display: flex !important;
+  }
+
+  /* 2. Khi có class seller-open thì mới hiện ra */
+  .seller-sidebar.seller-open {
+    transform: translateX(0) !important;
+  }
+
+  /* 3. QUAN TRỌNG: Main content không được có margin-left */
+  .seller-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    position: relative;
+  }
+
+  /* 4. Thêm một lớp phủ tối nền khi mở Sidebar */
+  /* Bạn thêm thẻ div này vào React khi sidebarOpen === true */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998; /* Thấp hơn sidebar một chút */
+    backdrop-filter: blur(2px);
+  }
+}

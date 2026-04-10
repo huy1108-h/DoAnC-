@@ -236,3 +236,132 @@
 .icon {
     color: #94a3b8;
 }
+/* ================= RESPONSIVE ================= */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .previewCard {
+    max-width: 100%;
+  }
+
+  .stallInfo {
+    flex-direction: column;
+  }
+
+  .imagePreviewWrapper {
+    width: 100%;
+  }
+
+  .imagePreviewWrapper img {
+    width: 100%;
+    height: 160px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+
+  /* Ẩn header table */
+  .table thead {
+    display: none;
+  }
+
+  /* mỗi row thành card */
+  .tableRow {
+    display: block;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .table td {
+    display: grid;                          /* 🔥 FIX THẲNG HÀNG */
+    grid-template-columns: 110px 1fr;       /* label + value */
+    padding: 10px 0;
+    border: none;
+    border-bottom: 1px solid #eee;
+  }
+
+  .table td:last-child {
+    border-bottom: none;
+  }
+
+  /* label giả */
+  .table td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  /* value */
+  .table td > * {
+    text-align: right;
+    word-break: break-word;
+  }
+
+  /* requester */
+  .requesterCol {
+    justify-content: flex-end;
+  }
+
+  /* preview card co lại */
+  .previewCard {
+    padding: 10px;
+  }
+
+  .stallInfo {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .imagePreviewWrapper {
+    width: 100%;
+  }
+
+  .imagePreviewWrapper img {
+    width: 100%;
+    height: 150px;
+  }
+
+  /* action button xuống dưới */
+  .actionCol {
+    width: 100%;
+  }
+
+  .btnGroup {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+/* Mobile nhỏ */
+@media (max-width: 480px) {
+
+  .container {
+    padding: 16px;
+  }
+
+  .headerArea h2 {
+    font-size: 1.2rem;
+  }
+
+  .subtitle {
+    font-size: 0.8rem;
+  }
+
+  .table td {
+    grid-template-columns: 90px 1fr;
+  }
+
+  .btnGroup {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .approveBtn,
+  .rejectBtn {
+    width: 100%;
+    font-size: 12px;
+  }
+}

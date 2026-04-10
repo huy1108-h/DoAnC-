@@ -231,35 +231,35 @@ function TranslationManager() {
               <th>Thao Tác</th>
             </tr>
           </thead>
-          <tbody>
-            {currentItems.map(t => (
-              <tr key={t.id}>
-                <td>{t.id}</td>
-                <td>{t.narrationPointId}</td>
-                <td>{getLanguageName(t.languageCode)}</td>
-                <td className={styles.desc}>{t.content}</td>
-                <td>{t.translatedName}</td>
-                <td>
-                  <div className={styles['action-group']}>
-                    <button
-                      className={`${styles['action-btn']} ${styles['view-btn']}`}
-                      onClick={() => setSelectedTranslation({ ...t })}
-                      title="Xem/Sửa"
-                    >
-                      <ViewIcon />
-                    </button>
-                    <button
-                      className={`${styles['action-btn']} ${styles['delete-btn']}`}
-                      onClick={() => deleteTranslation(t.id)}
-                      title="Xóa"
-                    >
-                      <i className="fa-solid fa-trash-can"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
+         <tbody>
+  {currentItems.map(t => (
+    <tr key={t.id}>
+      <td data-label="ID">{t.id}</td>
+      <td data-label="Point ID">{t.narrationPointId}</td>
+      <td data-label="Ngôn ngữ">{getLanguageName(t.languageCode)}</td>
+      <td data-label="Nội dung" className={styles.desc}>{t.content}</td>
+      <td data-label="Tên dịch">{t.translatedName}</td>
+      <td data-label="Thao tác">
+        <div className={styles['action-group']}>
+          <button
+            className={`${styles['action-btn']} ${styles['view-btn']}`}
+            onClick={() => setSelectedTranslation({ ...t })}
+            title="Xem/Sửa"
+          >
+            <ViewIcon />
+          </button>
+          <button
+            className={`${styles['action-btn']} ${styles['delete-btn']}`}
+            onClick={() => deleteTranslation(t.id)}
+            title="Xóa"
+          >
+            <i className="fa-solid fa-trash-can"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
 
