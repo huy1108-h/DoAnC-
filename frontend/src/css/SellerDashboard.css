@@ -1,0 +1,607 @@
+.seller-container {
+  min-height: 100vh;
+  background: #f3f4f6;
+  font-family: system-ui, -apple-system, sans-serif;
+  display: flex;
+}
+
+/* SIDEBAR */
+.seller-sidebar {
+  width: 240px;
+  background: #1e293b;
+  color: #94a3b8;
+  padding: 24px 16px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 40;
+  transition: all 0.3s ease;
+}
+
+.seller-sidebar.seller-hidden {
+  display: none;
+}
+
+.seller-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  padding-left: 8px;
+}
+
+.seller-logo-icon {
+  background: #4f46e5;
+  color: white;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seller-logo-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: white;
+}
+
+.seller-logo-subtitle {
+  font-size: 11px;
+  color: #94a3b8;
+  text-transform: uppercase;
+}
+
+.seller-nav-section {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 12px;
+  padding-left: 8px;
+}
+
+.seller-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.seller-nav .seller-nav-button {
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.seller-nav-button.seller-active {
+  background: #334155;
+  color: white;
+}
+
+.seller-logout-btn {
+  margin-top: auto; /* Đẩy xuống dưới cùng */
+  margin-bottom: 20px; /* Cách đáy một khoảng */
+  background: transparent;
+  color: #ef4444; /* Giữ màu chữ đỏ để nhận diện */
+  border: 1px solid #ef4444; /* Viền đỏ mảnh */
+  border-radius: 6px;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.seller-logout-btn:hover {
+  background: #ef4444; /* Đổ nền đỏ khi di chuột vào */
+  color: #ffffff; /* Chữ chuyển trắng cho dễ đọc */
+}
+
+/* MAIN */
+.seller-main {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.seller-main.seller-full {
+  margin-left: 0;
+}
+
+/* HEADER */
+.seller-header {
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.seller-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 4px 12px;
+  border-radius: 30px;
+}
+
+.seller-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* PAGE */
+.seller-page {
+  padding: 24px 32px;
+}
+
+.seller-title {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.seller-subtitle {
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+/* FILTER */
+.seller-filter {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.seller-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.seller-search-box input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+}
+
+.seller-select {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+/* BUTTON */
+.seller-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.seller-btn-primary {
+  background: #4f46e5;
+  color: white;
+  border: none;
+}
+
+.seller-btn-outline {
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+/* TABLE */
+.seller-table {
+  background: white;
+  border-radius: 8px;
+}
+
+.seller-table-header, .seller-table-row {
+  display: grid;
+  grid-template-columns: 80px 2fr 1.2fr 1.5fr 1fr 100px; 
+  padding: 12px 24px;
+  align-items: center;
+  gap: 15px; 
+}
+
+.seller-table-header {
+  background: #f8fafc;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.seller-table-row {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.seller-col-content {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.seller-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.seller-badge {
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.seller-badge-purple {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.seller-badge-green {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* ACTION */
+.seller-action-btn {
+  border: 1px solid #e2e8f0;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seller-action-btn:hover {
+  background: #f1f5f9;
+}
+
+/* MODAL */
+.seller-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.7); /* Màu tối sâu hơn */
+  backdrop-filter: blur(4px); /* Làm mờ nền phía sau */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.seller-modal {
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 650px; /* Tăng chiều rộng để chia 2 cột */
+  max-height: 90vh; /* Giới hạn chiều cao để không bị tràn màn hình */
+  overflow-y: auto; /* Cho phép cuộn nếu nội dung quá dài */
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+}
+
+.seller-modal input {
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.seller-modal h2 {
+  font-size: 22px;
+  color: #1e293b;
+  font-weight: 700;
+  margin-bottom: 8px;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 16px;
+}
+.seller-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.active-row {
+  background-color: #eef2ff;
+}
+.seller-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+/* Nâng cấp Input & Select */
+.seller-input, .seller-select {
+  width: 100%;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1e293b;
+  transition: all 0.2s ease;
+}
+
+.seller-input:focus, .seller-select:focus {
+  background: white;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+  outline: none;
+}
+.image-preview-container {
+  background: #f1f5f9;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.form-group {
+  margin-bottom: 4px;
+}
+/* Điều chỉnh lại layout 2 cột cho các trường ngắn */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Nút bấm trong Modal */
+.seller-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.seller-btn {
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.seller-btn-outline {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+
+.seller-btn-outline:hover {
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.seller-btn-primary {
+  background: #4f46e5;
+  color: white;
+  border: none;
+  box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+}
+
+.seller-btn-primary:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+/* =========================
+   RESPONSIVE BỔ SUNG
+========================= */
+
+/* Tablet (Dưới 1024px) */
+@media (max-width: 1024px) {
+  .seller-sidebar {
+    width: 80px; /* Thu nhỏ sidebar chỉ để lại icon */
+    padding: 24px 8px;
+  }
+
+  .seller-logo-title, 
+  .seller-logo-subtitle, 
+  .seller-nav-section, 
+  .seller-nav-button span {
+    display: none; /* Ẩn chữ, chỉ hiện icon */
+  }
+
+  .seller-nav-button {
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .seller-main {
+    margin-left: 80px; /* Đẩy main vào ít hơn */
+  }
+
+  .seller-table-header, .seller-table-row {
+    grid-template-columns: 60px 1.5fr 1fr 1fr 80px; /* Bớt cột hoặc thu nhỏ */
+    font-size: 13px;
+  }
+}
+
+/* Mobile (Dưới 768px) */
+@media (max-width: 768px) {
+  .seller-sidebar {
+    transform: translateX(-100%); /* Ẩn hẳn sidebar vào lề trái */
+    width: 240px;
+  }
+
+  /* Khi sidebar có class active (bạn cần thêm JS để toggle class này) */
+  .seller-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .seller-main {
+    margin-left: 0; /* Main chiếm toàn màn hình */
+  }
+
+  .seller-header {
+    justify-content: space-between; /* Để dành chỗ cho nút Menu bên trái */
+    padding: 10px 16px;
+  }
+
+  .seller-page {
+    padding: 16px;
+  }
+
+  /* Chuyển TABLE thành dạng CARD để dễ nhìn */
+  .seller-table-header {
+    display: none; /* Ẩn tiêu đề bảng */
+  }
+
+  .seller-table-row {
+    display: flex;
+    flex-direction: column; /* Xếp chồng nội dung */
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .seller-col-content {
+    width: 100%;
+  }
+
+  /* Bộ lọc (Search & Select) xếp dọc */
+  .seller-filter {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .seller-search-box {
+    width: 100%;
+  }
+
+  /* Modal 2 cột thành 1 cột */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .seller-modal {
+    padding: 20px;
+    width: 95%;
+  }
+}
+
+/* Mobile nhỏ (Dưới 480px) */
+@media (max-width: 480px) {
+  .seller-title {
+    font-size: 20px;
+  }
+  
+  .seller-user-info span {
+    display: none; /* Ẩn tên user, chỉ để avatar trên header */
+  }
+
+  .seller-modal-actions {
+    flex-direction: column; /* Nút Lưu/Hủy xếp chồng */
+  }
+
+  .seller-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+.mobile-close-btn {
+  display: none;
+}
+@media (max-width: 768px) {
+  .mobile-close-btn {
+    display: flex; /* Hiện trên mobile */
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 20px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .mobile-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .seller-logo {
+    margin-top: 10px;
+  }
+  /* 1. Sidebar phải nằm ĐÈ lên trên cùng */
+  .seller-sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important; /* Độ rộng cố định khi mở */
+    z-index: 9999 !important;
+    transform: translateX(-100%); /* Mặc định ẩn */
+    transition: transform 0.3s ease !important;
+    display: flex !important;
+  }
+
+  /* 2. Khi có class seller-open thì mới hiện ra */
+  .seller-sidebar.seller-open {
+    transform: translateX(0) !important;
+  }
+
+  /* 3. QUAN TRỌNG: Main content không được có margin-left */
+  .seller-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    position: relative;
+  }
+
+  /* 4. Thêm một lớp phủ tối nền khi mở Sidebar */
+  /* Bạn thêm thẻ div này vào React khi sidebarOpen === true */
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998; /* Thấp hơn sidebar một chút */
+    backdrop-filter: blur(2px);
+  }
+}
