@@ -597,7 +597,7 @@
 
   /* 4. Thêm một lớp phủ tối nền khi mở Sidebar */
   /* Bạn thêm thẻ div này vào React khi sidebarOpen === true */
-  .sidebar-overlay {
+  .seller-sidebar-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);

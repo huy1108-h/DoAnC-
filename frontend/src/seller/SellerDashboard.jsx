@@ -14,7 +14,7 @@ const SellerDashboard = () => {
   
   // LOGIC TRẠNG THÁI APP: loading | unregistered | pending | rejected | approved | approved_notify
   const [appState, setAppState] = useState("loading"); 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
   return localStorage.getItem("currentSellerTab") || "my-shop";
   });
@@ -601,7 +601,7 @@ const handleUpdate = async () => {
     <div className="seller-container">
       {/* SIDEBAR */}
       {sidebarOpen && (
-      <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
+      <div className="seller-sidebar-overlay" onClick={() => setSidebarOpen(false)}></div>
     )}
       <aside className={`seller-sidebar ${sidebarOpen ? "seller-open" : "seller-hidden"}`}>
         <button className="mobile-close-btn" onClick={() => setSidebarOpen(false)}>

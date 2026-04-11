@@ -141,10 +141,12 @@ function AdminDashboard() {
 
   return (
     <div className="admin-container">
-       <div
-          className={`sidebar-overlay ${sidebarOpen ? "show" : ""}`}
-          onClick={() => setSidebarOpen(false)}
-        />
+       {sidebarOpen && (
+  <div
+    className="sidebar-overlay show"
+    onClick={() => setSidebarOpen(false)}
+  />
+)}
          
         <div className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-header">
