@@ -27,9 +27,6 @@ public class Stall
     [Column("longitude")]
     public float? Longitude { get; set; }
 
-    [Column("audios_id")]
-    public int? AudiosId { get; set; }
-
     [Column("status")]
     public StallStatus Status { get; set; } = StallStatus.Unclaimed;  // ✅ Fix 2: thêm default
 

@@ -37,7 +37,6 @@ public class NarrationPoint
     [Column("image_web")]
     public string? ImageWeb { get; set; }
     
-    public List<Audio>? Audios { get; set; }
      [NotMapped] // 🔥 QUAN TRỌNG
     public IFormFile? Image { get; set; }
     [Column("is_commercial")] 

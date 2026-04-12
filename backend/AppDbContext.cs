@@ -10,7 +10,7 @@ public class AppDbContext : DbContext
     {
     }
 
-    public DbSet<Audio> Audios { get; set; }
+   
     public DbSet<History> Histories { get; set; }
     public DbSet<NarrationPoint> NarrationPoints { get; set; }
     public DbSet<NarrationTranslation> NarrationTranslations { get; set; }

@@ -128,8 +128,7 @@ public class FoodPlaceController : ControllerBase
             }
         }
     }
-    // FoodPlaceController.cs
-// Thêm endpoint mới, giữ nguyên PUT/{id} cũ
+
 [HttpPatch("{id}/description")]
 public async Task<IActionResult> UpdateDescription(int id, [FromBody] UpdateDescriptionDto dto)
 {
@@ -142,7 +141,7 @@ public async Task<IActionResult> UpdateDescription(int id, [FromBody] UpdateDesc
     return Ok(new { message = "Update thành công" });
 }
 
-public class UpdateDescriptionDto
+public class UpdateDescriptionDto //DTO  dùng để đóng gói và vận chuyển dữ liệu ,chỉ chứa các trường dữ liệu (getter/setter)
 {
     public string? Description { get; set; }
 }

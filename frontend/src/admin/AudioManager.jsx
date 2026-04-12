@@ -377,7 +377,8 @@ function AudioManager() {
       <div style={{ display: "flex", gap: "0", marginBottom: "24px", borderBottom: "2px solid #e2e8f0" }}>
         {[
           { key: "vi", label: "🇻🇳 Tiếng Việt" },
-          { key: "trans", label: "🌐 Bản dịch" }
+          { key: "trans", label: "🌐 Bản dịch" },
+          
         ].map(tab => (
           <button
             key={tab.key}

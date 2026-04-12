@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 namespace web.Controllers
@@ -22,32 +20,7 @@ namespace web.Controllers
         // =========================
         // 🔊 API LẤY AUDIO THEO STALL
         // =========================
-        [HttpGet("my-stall-audios")]
-        [Authorize]
-        public async Task<IActionResult> GetAudiosByMyStall()
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
-
-            var stall = await _context.Stalls
-                .FirstOrDefaultAsync(s => s.OwnerId == userId); 
-
-            if (stall == null) return NotFound("Không tìm thấy gian hàng của bạn.");
-
-            var audios = await _context.Audios
-                .Where(a => a.NarrationPointId == stall.NarrationPointsId)
-                .Select(a => new {
-                    a.Id,
-                    a.Title,
-                    a.AudioUrl,
-                    a.AudioText,
-                    a.NarrationPointId
-                })
-                .ToListAsync();
-
-            return Ok(audios);
-        }
-
+        
         // =========================
         // 🎧 API TẠO AUDIO TỪ TEXT (TTS)
         // =========================
